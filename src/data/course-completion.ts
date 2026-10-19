@@ -10,15 +10,26 @@ export type CompletionMilestone = {
 };
 
 export const completionSettings = {
-  storageKey: "astro-course-progress:course-shell:v1",
+  storageKey: "astro-course-progress:nike-winflo-12:v1",
 };
 
-// Keep tracking configuration separate from learner-facing copy. Only
-// milestones that exist on the starter page belong in this active list.
 export const completionMilestones: CompletionMilestone[] = [
-  { id: "overview", label: "Course overview", type: "view", targetId: "overview", required: true },
-  { id: "content", label: "Course content", type: "view", targetId: "content", required: true },
-  { id: "interaction", label: "Reveal interaction", type: "complete", targetId: "interaction", required: true },
+  { id: "lesson-1", label: "Welcome and Customer moment", type: "view", targetId: "lesson-1", required: true },
+  { id: "customer-moment", label: "Customer moment and learning journey", type: "view", targetId: "customer-moment", required: true },
+  { id: "lesson-2", label: "Product basics", type: "view", targetId: "lesson-2", required: true },
+  { id: "lesson-3", label: "Technology lesson", type: "view", targetId: "lesson-3", required: true },
+  { id: "technology-carousel", label: "Explore six technology features", type: "explore", targetId: "technology-carousel", required: true },
+  { id: "lesson-4", label: "Customer fit lesson", type: "view", targetId: "lesson-4", required: true },
+  { id: "fit-carousel", label: "Explore five Customer fits", type: "explore", targetId: "fit-carousel", required: true },
+  { id: "lesson-5", label: "Product updates", type: "view", targetId: "lesson-5", required: true },
+  { id: "lesson-6", label: "A-M-E-R selling message", type: "view", targetId: "lesson-6", required: true },
+  { id: "lesson-7", label: "Customer scenarios", type: "view", targetId: "lesson-7", required: true },
+  { id: "needs-carousel", label: "Explore six Customer needs", type: "explore", targetId: "needs-carousel", required: true },
+  { id: "lesson-8", label: "Practice lesson", type: "view", targetId: "lesson-8", required: true },
+  { id: "practice-1", label: "Attempt practice question 1", type: "complete", targetId: "practice-1", required: true },
+  { id: "practice-2", label: "Attempt practice question 2", type: "complete", targetId: "practice-2", required: true },
+  { id: "practice-3", label: "Attempt practice question 3", type: "complete", targetId: "practice-3", required: true },
+  { id: "recap", label: "Course recap", type: "view", targetId: "recap", required: true },
 ];
 
 const completionTypes = new Set<CompletionType>(["view", "watch", "submit", "explore", "complete", "optional"]);

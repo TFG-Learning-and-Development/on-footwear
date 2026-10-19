@@ -1,0 +1,90 @@
+---
+interface Question {
+  scenario: string;
+  prompt: string;
+  options: readonly string[];
+  correct: number;
+  feedback: string;
+  incorrect: string;
+}
+interface Props { questions: readonly Question[] }
+const { questions } = Astro.props as Props;
+---
+
+<div class="winflo-practice" data-winflo-practice>
+  <div class="winflo-practice__questions">
+    {questions.map((question, index) => (
+      <article id={`practice-${index + 1}`} class="winflo-practice__question" data-completion-id={`practice-${index + 1}`} hidden={index !== 0}>
+        <div class="winflo-practice__prompt">
+          <p>{question.scenario}</p>
+          <h3>{question.prompt}</h3>
+        </div>
+        <form class="winflo-practice__form" data-correct={question.correct} data-correct-feedback={question.feedback} data-incorrect-feedback={question.incorrect}>
+          <fieldset>
+            <legend class="sr-only">{question.prompt}</legend>
+            {question.options.map((option, optionIndex) => (
+              <label class="winflo-practice__option">
+                <input type="radio" name={`question-${index + 1}`} value={optionIndex} />
+                <span><b>{String.fromCharCode(65 + optionIndex)}.</b> {option}</span>
+              </label>
+            ))}
+          </fieldset>
+          <button class="winflo-practice__submit" type="submit">Submit answer</button>
+          <p class="winflo-practice__feedback" data-practice-feedback role="status" aria-live="polite" hidden></p>
+        </form>
+      </article>
+    ))}
+  </div>
+  <div class="winflo-practice__controls">
+    <span data-practice-count aria-live="polite">Question 1 of {questions.length}</span>
+    <button type="button" data-practice-prev aria-label="Previous practice question" disabled><span aria-hidden="true">‹</span></button>
+    <button type="button" data-practice-next aria-label="Next practice question"><span aria-hidden="true">›</span></button>
+  </div>
+</div>
+
+<script>
+  const practice = document.querySelector<HTMLElement>("[data-winflo-practice]");
+  if (practice) {
+    const questions = Array.from(practice.querySelectorAll<HTMLElement>(".winflo-practice__question"));
+    const count = practice.querySelector<HTMLElement>("[data-practice-count]");
+    const previous = practice.querySelector<HTMLButtonElement>("[data-practice-prev]");
+    const next = practice.querySelector<HTMLButtonElement>("[data-practice-next]");
+    let current = 0;
+    const show = (index: number) => {
+      current = Math.max(0, Math.min(index, questions.length - 1));
+      questions.forEach((question, questionIndex) => { question.hidden = questionIndex !== current; });
+      if (count) count.textContent = `Question ${current + 1} of ${questions.length}`;
+      if (previous) previous.disabled = current === 0;
+      if (next) next.disabled = current === questions.length - 1;
+    };
+    previous?.addEventListener("click", () => show(current - 1));
+    next?.addEventListener("click", () => show(current + 1));
+    questions.forEach((question) => {
+      const form = question.querySelector<HTMLFormElement>("form");
+      const feedback = question.querySelector<HTMLElement>("[data-practice-feedback]");
+      form?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const selected = form.querySelector<HTMLInputElement>("input:checked");
+        if (!selected) {
+          if (feedback) { feedback.hidden = false; feedback.textContent = "Choose an answer, then submit it."; feedback.dataset.result = "unanswered"; }
+          return;
+        }
+        const correct = Number(selected.value) === Number(form.dataset.correct);
+        if (feedback) {
+          feedback.hidden = false;
+          feedback.textContent = correct ? form.dataset.correctFeedback || "" : form.dataset.incorrectFeedback || "";
+          feedback.dataset.result = correct ? "correct" : "incorrect";
+        }
+        window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: question.id } }));
+      });
+    });
+    window.addEventListener("course-progress:reset", () => {
+      questions.forEach((question) => {
+        question.querySelector<HTMLFormElement>("form")?.reset();
+        const feedback = question.querySelector<HTMLElement>("[data-practice-feedback]");
+        if (feedback) { feedback.hidden = true; feedback.textContent = ""; delete feedback.dataset.result; }
+      });
+      show(0);
+    });
+  }
+</script>

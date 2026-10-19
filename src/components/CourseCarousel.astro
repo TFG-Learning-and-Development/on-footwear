@@ -1,0 +1,58 @@
+---
+interface Item {
+  title: string;
+  image: string;
+  imageAlt: string;
+  fields: readonly { label: string; text: string }[];
+}
+interface Props {
+  id: string;
+  label: string;
+  items: readonly Item[];
+  tone?: "light" | "dark";
+}
+const { id, label, items, tone = "light" } = Astro.props as Props;
+const itemIds = items.map((_, index) => `${id}-item-${index + 1}`);
+---
+
+<div id={id} class:list={["winflo-carousel", `winflo-carousel--${tone}`]} data-winflo-carousel data-completion-id={id} data-required-items={JSON.stringify(itemIds)} aria-label={label}>
+  <div class="winflo-carousel__slides">
+    {items.map((item, index) => (
+      <article class="winflo-carousel__slide" data-item-id={itemIds[index]} hidden={index !== 0}>
+        <div class="winflo-carousel__image"><img src={item.image} alt={item.imageAlt} width="900" height="900" loading="lazy" decoding="async" /></div>
+        <div class="winflo-carousel__copy">
+          <h3>{item.title}</h3>
+          <dl>{item.fields.map((field) => <div><dt>{field.label}</dt><dd>{field.label.toLowerCase().includes("say") ? <q>{field.text}</q> : field.text}</dd></div>)}</dl>
+        </div>
+      </article>
+    ))}
+  </div>
+  <div class="winflo-carousel__controls">
+    <span data-carousel-count aria-live="polite">1 of {items.length}</span>
+    <button type="button" data-carousel-prev aria-label={`Previous ${label} item`} disabled><span aria-hidden="true">‹</span></button>
+    <button type="button" data-carousel-next aria-label={`Next ${label} item`}><span aria-hidden="true">›</span></button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-winflo-carousel]").forEach((root) => {
+    const slides = Array.from(root.querySelectorAll<HTMLElement>(".winflo-carousel__slide"));
+    const counter = root.querySelector<HTMLElement>("[data-carousel-count]");
+    const previous = root.querySelector<HTMLButtonElement>("[data-carousel-prev]");
+    const next = root.querySelector<HTMLButtonElement>("[data-carousel-next]");
+    let current = 0;
+    const show = (index: number) => {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((slide, slideIndex) => { slide.hidden = slideIndex !== current; });
+      if (counter) counter.textContent = `${current + 1} of ${slides.length}`;
+      if (previous) previous.disabled = current === 0;
+      if (next) next.disabled = current === slides.length - 1;
+      const itemId = slides[current]?.dataset.itemId;
+      if (itemId) window.dispatchEvent(new CustomEvent("course-progress:explore", { detail: { activityId: root.id, itemId } }));
+    };
+    previous?.addEventListener("click", () => show(current - 1));
+    next?.addEventListener("click", () => show(current + 1));
+    window.addEventListener("course-progress:reset", () => show(0));
+    window.setTimeout(() => show(0), 0);
+  });
+</script>

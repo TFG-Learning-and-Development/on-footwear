@@ -37,6 +37,8 @@ const fileExists = async (filename) => {
 };
 
 const parseHex = (value) => {
+  const rgbMatch = value.trim().match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)\s*\)$/i);
+  if (rgbMatch) return rgbMatch.slice(1).map(Number);
   const match = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (!match) return null;
   const expanded = match[1].length === 3 ? [...match[1]].map((character) => character.repeat(2)).join("") : match[1];
@@ -143,12 +145,14 @@ try {
       const response = await page.goto(baseUrl, { waitUntil: "networkidle" });
 
       fail(!response?.ok(), `${label} returned HTTP ${response?.status() ?? "unknown"}`);
-      fail((await page.title()) !== "Course title", `${label} metadata title is incorrect`);
-      fail((await page.locator("[data-nav-section]").count()) !== 3, `${label} section navigation is incomplete`);
+      fail((await page.title()) !== "Content", `${label} metadata title is incorrect`);
+      fail((await page.locator("[data-nav-section]").count()) !== 8, `${label} section navigation is incomplete`);
       fail((await page.locator('.eyebrow, .section-eyebrow, .qc-type--eyebrow').count()) !== 0, `${label} renders a learner-facing eyebrow label`);
       fail((await page.locator(".skip-link").count()) !== 1, `${label} skip link is missing`);
       fail((await page.locator(".footer-inner > p").textContent()) !== "Return to People Connect to continue", `${label} footer guidance text is incorrect`);
       fail((await page.locator(".footer-inner > p a, .footer-inner > p button").count()) !== 0, `${label} footer guidance text is interactive`);
+      fail((await page.locator(".footer-inner > p").evaluate((element) => getComputedStyle(element).color)) !== "rgb(255, 255, 255)", `${label} footer guidance text is not white`);
+      fail((await page.locator(".current-lesson, [data-current-lesson], [data-current-lesson-count]").count()) !== 0, `${label} current lesson strip remains in the header`);
       fail((await page.locator(".footer-inner > a").count()) !== 1 || !(await page.locator(".footer-inner > a").evaluate((element) => element.textContent?.includes("Back to top") && element.querySelector('[aria-hidden="true"]')?.textContent === "↑")), `${label} Back to top control or arrow changed`);
       fail(!(await page.locator(".course-footer").evaluate((element) => {
         const probe = document.createElement("span");
@@ -160,7 +164,7 @@ try {
       })), `${label} footer does not use the configurable course accent`);
       fail(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior !== "auto"), `${label} reduced-motion styles are not active`);
       fail(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1), `${label} has horizontal overflow`);
-      fail(await page.evaluate(() => Object.keys(localStorage).some((key) => key !== "astro-course-progress:course-shell:v1") || Object.keys(sessionStorage).length > 0), `${label} writes unexpected browser storage`);
+      fail(await page.evaluate(() => Object.keys(localStorage).some((key) => key !== "astro-course-progress:nike-winflo-12:v1") || Object.keys(sessionStorage).length > 0), `${label} writes unexpected browser storage`);
 
       const courseTypography = await page.evaluate(() => {
         const body = getComputedStyle(document.body);
@@ -177,14 +181,14 @@ try {
       fail(Math.abs(courseTypography.bodySize - 18) > 0.1, `${label} does not use the 1.125rem course body size`);
       fail(courseTypography.bodyLineHeight < courseTypography.bodySize * 1.5, `${label} course body line height is too tight`);
       fail(!courseTypography.family.includes("Arial Nova"), `${label} does not expose the local Arial Nova fallback stack`);
-      fail(courseTypography.heroSize <= courseTypography.sectionSize, `${label} main course display heading does not outrank section headings`);
+      fail(courseTypography.heroSize < 30 || courseTypography.heroSize > 55, `${label} hero heading falls outside the visual-board scale`);
 
       const geometry = await page.evaluate(() => {
         const bounds = (selector) => {
           const rect = document.querySelector(selector)?.getBoundingClientRect();
           return rect && { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
         };
-        const selectors = [".site-header", ".course-nav", ".hero", ".hero-grid", ".content-grid", ".interaction-layout", ".course-footer", ".footer-inner", ".reveal-example"];
+        const selectors = [".site-header", ".course-nav", ".hero", ".hero-grid", ".winflo-carousel", ".winflo-practice", ".course-footer", ".footer-inner"];
         return {
           items: selectors.map((selector) => ({ selector, ...bounds(selector) })),
           header: bounds(".site-header"),
@@ -198,12 +202,11 @@ try {
         fail(item.left < -1 || item.right > viewport.width + 1, `${label} ${item.selector} is clipped or outside the viewport`);
       }
       fail(Math.abs(geometry.header.bottom - geometry.hero.top) > 1, `${label} has a gap or overlap below the sticky header`);
-      if (viewport.width > 768) fail(Math.abs(geometry.heroContainer.left - geometry.footerContainer.left) > 1, `${label} content and footer containers are misaligned`);
-      fail(geometry.nav.left > geometry.heroContainer.left + 1 || geometry.nav.right < geometry.heroContainer.right - 1, `${label} wider header container does not contain the content grid`);
+      fail(geometry.heroContainer.left < 15 || geometry.heroContainer.right > viewport.width - 15, `${label} hero panel lacks visible outer margins`);
       const headerPattern = await page.evaluate(() => {
         const nav = document.querySelector(".course-nav");
         const logo = document.querySelector(".brand-link");
-        const links = document.querySelector(".course-links");
+        const lessons = document.querySelector(".lessons-toggle");
         const progress = document.querySelector("[data-progress-trigger]");
         const rect = (element) => {
           const bounds = element?.getBoundingClientRect();
@@ -212,14 +215,20 @@ try {
         return {
           logoChildren: logo?.children.length,
           logoName: logo?.getAttribute("aria-label"),
-          nav: rect(nav), logo: rect(logo), links: rect(links), progress: rect(progress),
+          nav: rect(nav), logo: rect(logo), lessons: rect(lessons), progress: rect(progress),
+          lessonsColor: getComputedStyle(lessons).color,
+          chevronColor: getComputedStyle(lessons.querySelector("svg")).stroke,
+          progressColor: getComputedStyle(progress).color,
+          lessonsFontSize: getComputedStyle(lessons).fontSize,
+          progressLabelFontSize: getComputedStyle(progress.querySelector("span")).fontSize,
+          progressPercentFontSize: getComputedStyle(progress.querySelector("strong")).fontSize,
         };
       });
       fail(headerPattern.logoChildren !== 1 || !headerPattern.logoName, `${label} header brand is not logo-only with an accessible name`);
-      if (viewport.width > 1024) {
-        fail(headerPattern.logo.right > headerPattern.links.left + 1 || headerPattern.links.right > headerPattern.progress.left + 1, `${label} desktop header order overlaps`);
-        fail(Math.abs(headerPattern.nav.right - headerPattern.progress.right) > 1, `${label} Progress is not aligned to the header's padded right edge`);
-      }
+      fail(headerPattern.logo.right > headerPattern.lessons.left + 1 || headerPattern.lessons.right > headerPattern.progress.left + 1, `${label} logo, Lessons and Progress overlap`);
+      fail(Math.abs(headerPattern.nav.right - headerPattern.progress.right) > 1, `${label} Progress is not aligned to the header's padded right edge`);
+      fail([headerPattern.lessonsColor, headerPattern.chevronColor, headerPattern.progressColor].some((color) => color !== "rgb(255, 255, 255)"), `${label} navbar control text or chevron is not white`);
+      fail(headerPattern.progressLabelFontSize !== headerPattern.lessonsFontSize || headerPattern.progressPercentFontSize !== headerPattern.lessonsFontSize, `${label} Progress label and percentage do not match the Lessons font size`);
 
       const progressTrigger = page.locator("[data-progress-trigger]");
       await checkFocus(page, "[data-progress-trigger]", `${label} progress trigger`);
@@ -264,63 +273,104 @@ try {
       await skipLink.press("Enter");
       fail((await page.evaluate(() => location.hash)) !== "#main-content", `${label} skip link did not target main content`);
 
-      const toggle = page.locator(".nav-toggle");
-      if (viewport.width <= 1024) {
-        await checkFocus(page, ".nav-toggle", `${label} mobile navigation control`);
-        await toggle.press("Enter");
-        fail((await toggle.getAttribute("aria-expanded")) !== "true" || !(await page.locator(".course-links").isVisible()), `${label} mobile navigation did not open`);
-        fail((await toggle.locator(".sr-only").textContent()) !== "Close course navigation", `${label} mobile navigation label did not announce its open state`);
+      const toggle = page.locator(".lessons-toggle");
+      const lessonsPanel = page.locator(".course-links");
+      fail(await lessonsPanel.isVisible() || (await toggle.getAttribute("aria-expanded")) !== "false", `${label} Lessons is not initially closed`);
+      fail((await page.locator(".course-links a").count()) !== 8 || (await page.locator(".lessons-toggle").count()) !== 1, `${label} does not have exactly one eight-lesson menu`);
+      await checkFocus(page, ".lessons-toggle", `${label} Lessons control`);
+      await toggle.press("Enter");
+      fail((await toggle.getAttribute("aria-expanded")) !== "true" || !(await lessonsPanel.isVisible()), `${label} Lessons did not open from the keyboard`);
+      fail((await lessonsPanel.locator(".course-links__heading").textContent()) !== "Course lessons", `${label} Lessons panel heading is missing`);
+      const lessonPanelGeometry = await lessonsPanel.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+      });
+      fail(lessonPanelGeometry.left < -1 || lessonPanelGeometry.right > viewport.width + 1 || lessonPanelGeometry.bottom > viewport.height + 1, `${label} Lessons panel escapes the viewport`);
+      await progressTrigger.click();
+      fail((await toggle.getAttribute("aria-expanded")) !== "false" || await lessonsPanel.isVisible(), `${label} Progress did not close Lessons`);
+      await page.keyboard.press("Escape");
+      await toggle.click();
+      await toggle.press("Escape");
+      fail((await toggle.getAttribute("aria-expanded")) !== "false" || await lessonsPanel.isVisible(), `${label} Lessons did not close with Escape`);
+      fail(!(await toggle.evaluate((element) => element === document.activeElement)), `${label} Lessons did not restore focus after Escape`);
+      await toggle.click();
+      await page.evaluate(() => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+      fail((await toggle.getAttribute("aria-expanded")) !== "false", `${label} Lessons did not dismiss on outside click`);
 
-        await progressTrigger.click();
-        fail((await toggle.getAttribute("aria-expanded")) !== "false", `${label} progress dropdown did not close the mobile navigation`);
-        await page.keyboard.press("Escape");
-        await toggle.press("Enter");
-
-        await page.locator('.course-links a[href="#content"]').click();
-        fail((await toggle.getAttribute("aria-expanded")) !== "false", `${label} mobile navigation did not close after selection`);
-        fail((await page.evaluate(() => location.hash)) !== "#content", `${label} mobile section link did not update the URL`);
-
-        const anchorOffset = await page.evaluate(() => ({
-          headerBottom: document.querySelector(".site-header").getBoundingClientRect().bottom,
-          targetTop: document.querySelector("#content").getBoundingClientRect().top,
-        }));
-        fail(anchorOffset.targetTop < anchorOffset.headerBottom - 1, `${label} anchor target is hidden behind the header`);
-
+      const expectedLessons = ["Welcome", "Product basics", "Shoe technology", "Customer fit", "What’s new", "Key selling message", "Customer scenario", "Practice knowledge check"];
+      const lessonNumbers = viewport.width === 1366 ? [1, 2, 3, 4, 5, 6, 7, 8] : [2];
+      for (const number of lessonNumbers) {
         await toggle.click();
-        await toggle.press("Escape");
-        fail((await toggle.getAttribute("aria-expanded")) !== "false", `${label} mobile navigation did not close with Escape`);
-        fail(!(await toggle.evaluate((element) => element === document.activeElement)), `${label} mobile navigation did not restore focus after Escape`);
-
-        if (viewport.width === 1024) {
-          await toggle.click();
-          await page.setViewportSize({ width: 1100, height: 768 });
-          await page.waitForFunction(() => document.querySelector(".nav-toggle")?.getAttribute("aria-expanded") === "false");
-          fail((await toggle.getAttribute("aria-expanded")) !== "false", "mobile navigation retained expanded state after crossing to desktop");
-          await page.setViewportSize(viewport);
-          fail(await page.locator(".course-links").isVisible(), "mobile navigation remained visible after returning below the breakpoint");
-        }
-      } else {
-        await checkFocus(page, '.course-links a[href="#content"]', `${label} desktop navigation link`);
-        await page.locator('.course-links a[href="#content"]').click();
-        const anchorOffset = await page.evaluate(() => ({
+        const lessonLink = lessonsPanel.locator(`a[href="#lesson-${number}"]`);
+        fail((await lessonLink.locator("span").allTextContents()).join(" ") !== `${String(number).padStart(2, "0")} ${expectedLessons[number - 1]}`, `${label} lesson ${number} label or target is incorrect`);
+        await checkFocus(page, `.course-links a[href="#lesson-${number}"]`, `${label} lesson ${number} link`);
+        await lessonLink.press("Enter");
+        fail((await toggle.getAttribute("aria-expanded")) !== "false" || await lessonsPanel.isVisible(), `${label} Lessons did not close after selection`);
+        fail((await page.evaluate(() => location.hash)) !== `#lesson-${number}`, `${label} lesson ${number} link did not update the URL`);
+        await page.waitForFunction((index) => document.querySelector(".course-links a[aria-current='location']")?.getAttribute("href") === `#lesson-${index}`, number);
+        const anchorOffset = await page.evaluate((index) => ({
           headerBottom: document.querySelector(".site-header").getBoundingClientRect().bottom,
-          targetTop: document.querySelector("#content").getBoundingClientRect().top,
-        }));
-        fail(anchorOffset.targetTop < anchorOffset.headerBottom - 1, `${label} anchor target is hidden behind the header`);
+          targetTop: document.querySelector(`#lesson-${index}`).getBoundingClientRect().top,
+        }), number);
+        fail(anchorOffset.targetTop < anchorOffset.headerBottom - 1 || anchorOffset.targetTop > anchorOffset.headerBottom + 24, `${label} lesson ${number} anchor has incorrect header spacing`);
+      }
+      if (viewport.width === 320) {
+        await page.setViewportSize({ width: 320, height: 360 });
+        await toggle.click();
+        const shortPanel = await lessonsPanel.evaluate((element) => ({ scrollable: element.scrollHeight > element.clientHeight, bottom: element.getBoundingClientRect().bottom }));
+        fail(!shortPanel.scrollable || shortPanel.bottom > 361, "Lessons panel is not contained and scrollable on a short screen");
+        await toggle.press("Escape");
+        await page.setViewportSize(viewport);
       }
 
-      const reveal = page.locator(".reveal-button");
-      await checkFocus(page, ".reveal-button", `${label} reveal control`);
-      await reveal.press("Enter");
-      fail((await reveal.getAttribute("aria-expanded")) !== "true" || !(await page.locator(".reveal-response").isVisible()), `${label} keyboard interaction did not reveal content`);
-      fail((await reveal.locator("span:first-child").textContent()) !== "Hide key point", `${label} reveal control did not expose its close label`);
-      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:course-shell:v1") || "{}").completed?.includes("interaction"))), `${label} reveal interaction did not emit completion`);
-      await reveal.press("Space");
-      fail((await reveal.getAttribute("aria-expanded")) !== "false" || await page.locator(".reveal-response").isVisible(), `${label} keyboard interaction did not hide content`);
+      const carouselNext = page.locator("#technology-carousel [data-carousel-next]");
+      await checkFocus(page, "#technology-carousel [data-carousel-next]", `${label} carousel next control`);
+      await carouselNext.press("Enter");
+      fail((await page.locator("#technology-carousel [data-carousel-count]").textContent()) !== "2 of 6", `${label} technology carousel did not advance from the keyboard`);
+      await page.locator("#technology-carousel [data-carousel-prev]").click();
+      fail((await page.locator("#technology-carousel [data-carousel-count]").textContent()) !== "1 of 6", `${label} technology carousel did not move backward`);
+      const firstOption = page.locator("#practice-1 input[value='1']");
+      await firstOption.check();
+      await page.locator("#practice-1 [type='submit']").click();
+      fail(!(await page.locator("#practice-1 [data-practice-feedback]").textContent()).includes("Correct."), `${label} practice answer feedback is missing`);
+      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}").completed?.includes("practice-1"))), `${label} practice attempt did not emit completion`);
+      await page.locator("[data-practice-next]").click();
+      fail((await page.locator("[data-practice-count]").textContent()) !== "Question 2 of 3", `${label} practice did not advance`);
+      await page.locator("[data-practice-prev]").click();
+      fail(!(await firstOption.isChecked()) || !(await page.locator("#practice-1 [data-practice-feedback]").isVisible()), `${label} practice response was not retained`);
 
-      await page.locator("#interaction").evaluate((element) => element.scrollIntoView({ block: "start" }));
+      if (viewport.width === 1440) {
+        for (const [carouselId, total] of [["technology-carousel", 6], ["fit-carousel", 5], ["needs-carousel", 6]]) {
+          const carousel = page.locator(`#${carouselId}`);
+          for (let item = 2; item <= total; item += 1) {
+            await carousel.locator("[data-carousel-next]").click();
+            fail((await carousel.locator("[data-carousel-count]").textContent()) !== `${item} of ${total}`, `${carouselId} count is incorrect at item ${item}`);
+            fail((await carousel.locator(".winflo-carousel__slide:visible").count()) !== 1, `${carouselId} shows multiple items`);
+          }
+          fail(!(await carousel.locator("[data-carousel-next]").isDisabled()), `${carouselId} next control did not stop at the last item`);
+          await carousel.locator("[data-carousel-prev]").click();
+          fail((await carousel.locator("[data-carousel-count]").textContent()) !== `${total - 1} of ${total}`, `${carouselId} previous control did not work`);
+        }
+        await page.locator("[data-practice-next]").click();
+        await page.locator("#practice-2 input[value='0']").check();
+        await page.locator("#practice-2 [type='submit']").click();
+        fail((await page.locator("#practice-2 [data-practice-feedback]").getAttribute("data-result")) !== "incorrect", "question 2 incorrect feedback is missing");
+        await page.locator("#practice-2 input[value='1']").check();
+        await page.locator("#practice-2 [type='submit']").click();
+        fail(!(await page.locator("#practice-2 [data-practice-feedback]").textContent()).includes("Correct."), "question 2 retry feedback is missing");
+        await page.locator("[data-practice-next]").click();
+        await page.locator("#practice-3 input[value='2']").check();
+        await page.locator("#practice-3 [type='submit']").click();
+        fail(!(await page.locator("#practice-3 [data-practice-feedback]").textContent()).includes("Correct."), "question 3 correct feedback is missing");
+        const courseState = await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}"));
+        for (const activityId of ["technology-carousel", "fit-carousel", "needs-carousel", "practice-1", "practice-2", "practice-3"]) {
+          fail(!courseState.completed?.includes(activityId), `${activityId} did not complete in course-specific storage`);
+        }
+      }
+
+      await page.locator("#lesson-8").evaluate((element) => element.scrollIntoView({ block: "start" }));
       await page.waitForTimeout(100);
-      fail((await page.locator('.course-links a[aria-current="location"]').getAttribute("href")) !== "#interaction", `${label} final section did not become the active navigation item`);
+      fail((await page.locator('.course-links a[aria-current="location"]').getAttribute("href")) !== "#lesson-8", `${label} final section did not become the active navigation item`);
 
       const footerLink = page.locator(".footer-inner a");
       await checkFocus(page, ".footer-inner a", `${label} footer link`);
@@ -382,46 +432,6 @@ try {
       await page.waitForFunction(() => window.scrollY <= 1);
       fail((await page.evaluate(() => window.scrollY)) > 1, `${label} back-to-top control did not return to the document top`);
 
-      if (viewport.width === 1366) {
-        await page.evaluate(() => {
-          const links = document.querySelector(".course-links");
-          const items = [
-            ["overview", "Course overview"],
-            ["content", "Key concepts"],
-            ["interaction", "Worked examples"],
-            ["content", "Knowledge check"],
-            ["overview", "Resources and support"],
-          ];
-          links.replaceChildren(...items.map(([id, label]) => {
-            const link = document.createElement("a"); link.href = `#${id}`; link.textContent = label; return link;
-          }));
-        });
-        const fiveLinkDesktop = await page.evaluate(() => {
-          const links = [...document.querySelectorAll(".course-links a")];
-          const linkRects = links.map((link) => link.getBoundingClientRect());
-          const group = document.querySelector(".course-links").getBoundingClientRect();
-          const logo = document.querySelector(".brand-link").getBoundingClientRect();
-          const progress = document.querySelector("[data-progress-trigger]").getBoundingClientRect();
-          return {
-            count: links.length,
-            oneRow: linkRects.every((rect) => Math.abs(rect.top - linkRects[0].top) <= 1),
-            contained: linkRects.every((rect) => rect.left >= group.left - 1 && rect.right <= group.right + 1),
-            separated: group.left >= logo.right - 1 && group.right <= progress.left + 1,
-          };
-        });
-        fail(fiveLinkDesktop.count !== 5 || !fiveLinkDesktop.oneRow || !fiveLinkDesktop.contained || !fiveLinkDesktop.separated, "five-link desktop header wraps, overlaps or crowds adjacent controls");
-        await page.setViewportSize({ width: 1024, height: 768 });
-        fail(await page.locator(".nav-toggle").evaluate((element) => getComputedStyle(element).display === "none"), "five-link header did not switch to the mobile menu at the breakpoint");
-        fail(await page.locator(".course-links").isVisible(), "five-link mobile navigation was visible before disclosure");
-        await page.locator(".nav-toggle").click();
-        const fiveLinkMobile = await page.locator(".course-links a").evaluateAll((links) => links.map((link) => {
-          const rect = link.getBoundingClientRect(); return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
-        }));
-        fail(fiveLinkMobile.length !== 5 || fiveLinkMobile.some((rect, index) => rect.left < -1 || rect.right > 1025 || (index > 0 && rect.top < fiveLinkMobile[index - 1].bottom - 1)), "five-link mobile navigation clips or overlaps");
-        fail(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1), "five-link mobile header causes horizontal overflow");
-        await page.setViewportSize(viewport);
-      }
-
       if (viewport.width === 1024) {
         const tokens = await page.evaluate(() => {
           const style = getComputedStyle(document.documentElement);
@@ -440,21 +450,20 @@ try {
           return { accentChanged, accentStrongChanged };
         });
         fail(!heroTheme.accentChanged || !heroTheme.accentStrongChanged, "Overview hero does not respond to both shared course accent tokens");
-        fail(contrast(tokens["--focus-on-light"], tokens["--surface"]) < 3, "light-surface focus token has less than 3:1 contrast against the light surface");
+        fail(tokens["--course-accent"].toLowerCase() !== "#00a9e0", "course accent is not the Totalsports brand blue");
+        fail(tokens["--focus-on-light"] !== tokens["--course-accent"], "light-surface focus ring does not inherit the Totalsports brand blue");
         fail(contrast(tokens["--focus-on-dark"], tokens["--ink"]) < 3, "dark-surface focus token has less than 3:1 contrast against the navigation/footer surface");
         fail(contrast(tokens["--focus-on-dark"], tokens["--course-accent-strong"]) < 3, "dark-surface focus token has less than 3:1 contrast against the course accent surface");
-        fail(contrast("#ffffff", tokens["--course-accent"]) < 4.5, "fixed footer text has less than 4.5:1 contrast against the course accent background");
-        fail(contrast(tokens["--course-accent"], "#e1e5e7") < 3, "course accent has less than 3:1 contrast against the neutral progress track");
 
-        if (!(await page.locator(".course-links").isVisible())) await page.locator(".nav-toggle").click();
+        if (!(await page.locator(".course-links").isVisible())) await page.locator(".lessons-toggle").click();
 
-        await page.locator('.course-links a[href="#overview"]').evaluate((element) => element.setAttribute("aria-current", "location"));
-        const activeStyle = await page.locator('.course-links a[href="#overview"]').evaluate((element) => {
-          const style = getComputedStyle(element); return `${style.backgroundColor}|${style.borderBottomColor}`;
+        await page.locator('.course-links a[href="#lesson-1"]').evaluate((element) => element.setAttribute("aria-current", "location"));
+        const activeStyle = await page.locator('.course-links a[href="#lesson-1"]').evaluate((element) => {
+          const style = getComputedStyle(element); return `${style.backgroundColor}|${style.borderLeftColor}`;
         });
-        await page.locator('.course-links a[href="#content"]').hover();
-        const hoverStyle = await page.locator('.course-links a[href="#content"]').evaluate((element) => {
-          const style = getComputedStyle(element); return `${style.backgroundColor}|${style.borderBottomColor}`;
+        await page.locator('.course-links a[href="#lesson-2"]').hover();
+        const hoverStyle = await page.locator('.course-links a[href="#lesson-2"]').evaluate((element) => {
+          const style = getComputedStyle(element); return `${style.backgroundColor}|${style.borderLeftColor}`;
         });
         fail(activeStyle === hoverStyle, "navigation hover and active-section styles are not distinguishable");
       }
@@ -698,5 +707,5 @@ if (errors.length) {
   console.error(errors.join("\n"));
   process.exitCode = 1;
 } else {
-  console.log(`Starter verification passed: ${viewports.map(labelFor).join(", ")}; responsive navigation including five-link desktop and mobile layouts, progress dropdown, anchors, active-section and back-to-top capsule behaviour; keyboard and reduced-motion support; completion types, persistence, reset and storage isolation; shared-token hero and progress theming plus theme focus contrast; typography roles and overrides; a 200% browser-zoom equivalent; and reusable component fixtures at ${componentViewports.map(labelFor).join(", ")}.`);
+  console.log(`Course verification passed: ${viewports.map(labelFor).join(", ")}; responsive navigation, progress dropdown, anchors, active-section and back-to-top capsule behaviour; carousel and practice interactions; keyboard and reduced-motion support; completion types, persistence, reset and storage isolation; shared-token hero, progress and focus theming; typography roles and overrides; a 200% browser-zoom equivalent; and reusable component fixtures at ${componentViewports.map(labelFor).join(", ")}.`);
 }

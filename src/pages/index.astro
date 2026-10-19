@@ -1,6 +1,9 @@
 ---
-import InfoCallout from "../components/InfoCallout.astro";
+import "../styles/winflo.css";
 import CourseProgress from "../components/CourseProgress.astro";
+import CourseCarousel from "../components/CourseCarousel.astro";
+import PracticeQuiz from "../components/PracticeQuiz.astro";
+import ResponsiveTable from "../components/ResponsiveTable.astro";
 import SectionHeading from "../components/SectionHeading.astro";
 import { courseData } from "../data/course";
 import { completionMilestones, completionSettings } from "../data/course-completion";
@@ -11,75 +14,161 @@ import CourseLayout from "../layouts/CourseLayout.astro";
   <div class="course-page" id="top">
     <header class="site-header">
       <nav class="course-nav container" aria-label="Course sections">
-        <a class="brand-link" href="#overview" aria-label={courseData.brand.homeLabel}>
-          <span class="brand-mark" aria-hidden="true">CS</span>
+        <a class="brand-link" href="#lesson-1" aria-label={courseData.brand.homeLabel}>
+          <img src="/assets/totalsports-logo-white.svg" alt="Totalsports logo" width="698" height="98" />
         </a>
-        <div class="course-links" id="course-links">
-          {courseData.navigation.map((item, index) => (
-            <a href={`#${item.id}`} aria-current={index === 0 ? "location" : undefined}>{item.label}</a>
-          ))}
-        </div>
         <div class="nav-actions">
+          <div class="lessons-menu">
+            <button class="lessons-toggle" type="button" aria-expanded="false" aria-controls="course-links">
+              Lessons
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 6 5 5 5-5" /></svg>
+            </button>
+            <div class="course-links" id="course-links" hidden>
+              <h2 class="course-links__heading">Course lessons</h2>
+              {courseData.navigation.map((item, index) => (
+                <a href={`#${item.id}`} aria-current={index === 0 ? "location" : undefined}>
+                  <span class="course-links__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <span>{item.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
           <CourseProgress milestones={completionMilestones} storageKey={completionSettings.storageKey} />
-          <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="course-links">
-            <span class="sr-only">Open course navigation</span>
-            <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
-          </button>
         </div>
       </nav>
     </header>
 
-    <main id="main-content">
-      <section class="hero" id="overview" data-nav-section data-completion-id="overview">
+    <main id="main-content" class="winflo">
+      <section class="hero winflo-hero" id="lesson-1" data-nav-section data-completion-id="lesson-1">
         <div class="container hero-grid">
           <div class="hero-copy">
             <h1>{courseData.hero.title}</h1>
-            <p class="hero-description">{courseData.hero.description}</p>
-            <a class="button-link" href="#content">{courseData.hero.actionLabel}</a>
+            {courseData.hero.paragraphs.map((paragraph) => <p class="hero-description">{paragraph}</p>)}
           </div>
-          <div class="hero-panel" aria-hidden="true">
-            <span>01</span><span>02</span><span>03</span>
+          <img class="winflo-hero__shoe" src="/assets/winflo-pair.webp" alt="Pair of white Nike Winflo 12 road-running shoes with pink accents" width="1500" height="1500" fetchpriority="high" decoding="async" />
+        </div>
+      </section>
+
+      <section class="section winflo-introduction" id="customer-moment" data-completion-id="customer-moment">
+        <div class="container">
+          <div class="winflo-quote-box">
+            <SectionHeading title="Customer moment" />
+            <p>A Customer walks into the store and says:</p>
+            <blockquote>“{courseData.customerMoment.quote}”</blockquote>
+          </div>
+          <p class="winflo-emphasis">{courseData.customerMoment.clue}</p>
+          <p class="winflo-centered">{courseData.customerMoment.explanation}</p>
+          <div class="winflo-journey">
+            <SectionHeading title="Your learning journey" />
+            <p>{courseData.journey}</p>
+          </div>
+          <img class="winflo-introduction__shoe" src="/assets/winflo-top-cutout.webp" alt="" aria-hidden="true" width="1100" height="1100" loading="lazy" decoding="async" />
+        </div>
+      </section>
+
+      <section class="section winflo-dark winflo-basics" id="lesson-2" data-nav-section data-completion-id="lesson-2">
+        <div class="container">
+          <SectionHeading title="Product basics" intro={courseData.basics.intro} light />
+          <p class="winflo-centered">{courseData.basics.description}</p>
+          <div class="winflo-outline-callout">
+            <h3>A simple way to explain it</h3>
+            <p><q>{courseData.basics.phrase}</q></p>
           </div>
         </div>
       </section>
 
-      <section class="section content-section" id="content" data-nav-section data-completion-id="content">
-        <div class="container content-grid">
-          <SectionHeading title={courseData.content.title} align="left" />
-          <div class="prose">
-            {courseData.content.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
-            <InfoCallout title={courseData.content.calloutTitle} tone="pale">
-              <p>{courseData.content.callout}</p>
-            </InfoCallout>
+      <section class="section winflo-photo-section winflo-technology" id="lesson-3" data-nav-section data-completion-id="lesson-3">
+        <div class="container">
+          <SectionHeading title="How to explain the technology" intro={courseData.technology.intro} light />
+          <CourseCarousel id="technology-carousel" label="Technology features" items={courseData.technology.features} />
+          <div class="winflo-outline-callout">
+            <h3>Sales tip</h3>
+            <p>{courseData.technology.tip}</p>
           </div>
         </div>
       </section>
 
-      <section class="section interaction-section" id="interaction" data-nav-section data-completion-id="interaction">
-        <div class="container interaction-layout">
-          <SectionHeading
-            title={courseData.interaction.title}
-            intro={courseData.interaction.introduction}
-            light
-            align="left"
-          />
-          <div class="reveal-example">
-            <p class="reveal-prompt">{courseData.interaction.prompt}</p>
-            <button
-              class="reveal-button"
-              type="button"
-              aria-expanded="false"
-              aria-controls="example-response"
-              data-open-label={courseData.interaction.actionLabel}
-              data-close-label={courseData.interaction.closeLabel}
-            >
-              <span>{courseData.interaction.actionLabel}</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div class="reveal-response" id="example-response" hidden>
-              <p>{courseData.interaction.response}</p>
-            </div>
+      <section class="section winflo-fit" id="lesson-4" data-nav-section data-completion-id="lesson-4">
+        <div class="container">
+          <SectionHeading title="Nike Winflo 12 Customer fit overview" intro={courseData.fit.intro} />
+          <CourseCarousel id="fit-carousel" label="Customer fit examples" items={courseData.fit.examples} />
+          <div class="winflo-unsuitable">
+            <img src="/assets/light-bulb_2.svg" alt="" aria-hidden="true" width="96" height="96" loading="lazy" />
+            <div><h3>When it may not be the best match</h3><ul>{courseData.fit.unsuitable.map((item) => <li>{item}</li>)}</ul></div>
           </div>
+          <div class="winflo-outline-callout winflo-outline-callout--light">
+            <h3>Be honest with the Customer</h3>
+            <p>{courseData.fit.honest}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section winflo-dark winflo-updates" id="lesson-5" data-nav-section data-completion-id="lesson-5">
+        <div class="container">
+          <SectionHeading title="What is new in the Nike Winflo 12?" intro={courseData.updates.intro} light />
+          <div class="winflo-update-grid">
+            {courseData.updates.cards.map((card) => <article class="winflo-update-card">
+              <img src={card.image} alt={card.imageAlt} width="900" height="900" loading="lazy" decoding="async" />
+              <div><h3>{card.title}</h3><p>{card.benefit}</p></div>
+            </article>)}
+          </div>
+          <h3 class="winflo-subheading">Product details to remember</h3>
+          <ResponsiveTable id="winflo-specifications" label="Nike Winflo 12 product specifications" tone="dark" columns={[{ key: "detail", label: "Detail" }, { key: "specification", label: "Specification" }]} rows={courseData.updates.specifications} />
+          <div class="winflo-outline-callout">
+            <h3>Keep it Customer-friendly</h3>
+            <p>{courseData.updates.tip}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section winflo-amer" id="lesson-6" data-nav-section data-completion-id="lesson-6">
+        <div class="container">
+          <SectionHeading title="Key selling message" intro={courseData.amer.intro} />
+          <div class="winflo-amer-flow">
+            {courseData.amer.steps.map((step) => <div class="winflo-amer-row">
+              <h3>{step.name}</h3><p>{step.description}</p><p><q>{step.example}</q></p>
+            </div>)}
+          </div>
+        </div>
+      </section>
+
+      <section class="section winflo-dark winflo-scenario" id="lesson-7" data-nav-section data-completion-id="lesson-7">
+        <div class="container">
+          <SectionHeading title="Customer scenario" intro={courseData.scenario.intro} light />
+          <div class="winflo-customer-quote"><h3>Customer says</h3><blockquote>“{courseData.scenario.quote}”</blockquote></div>
+          <p class="winflo-centered">{courseData.scenario.explanation}</p>
+          <h3 class="winflo-subheading">Store Associate response using A-M-E-R</h3>
+          <div class="winflo-amer-flow winflo-amer-flow--response">
+            {courseData.scenario.response.map((step) => <div class="winflo-amer-row"><h4>{step.name}</h4><p><q>{step.example}</q></p></div>)}
+          </div>
+          <h3 class="winflo-subheading">Experienced-runner scenario</h3>
+          <div class="winflo-dialogue">
+            <div><h4>Customer says</h4><blockquote>“{courseData.scenario.experienced.quote}”</blockquote></div>
+            <div><h4>Helpful response</h4><blockquote>“{courseData.scenario.experienced.response}”</blockquote></div>
+          </div>
+          <h3 class="winflo-subheading">Match Customer needs to benefits</h3>
+          <CourseCarousel id="needs-carousel" label="Customer needs and benefits" items={courseData.scenario.needs} tone="dark" />
+        </div>
+      </section>
+
+      <section class="section winflo-photo-section winflo-practice-section" id="lesson-8" data-nav-section data-completion-id="lesson-8">
+        <div class="container">
+          <SectionHeading title="Practice knowledge check" intro={courseData.practice.intro} light />
+          <PracticeQuiz questions={courseData.practice.questions} />
+        </div>
+      </section>
+
+      <section class="section winflo-dark winflo-recap" id="recap" data-completion-id="recap">
+        <div class="container">
+          <SectionHeading title="Course Recap: Ready to Recommend" intro={courseData.recap.intro} light />
+          <div class="winflo-remember">
+            <img src="/assets/light-bulb_2.svg" alt="" aria-hidden="true" width="96" height="96" loading="lazy" />
+            <div><h3>Remember</h3><ul>{courseData.recap.remember.map((item) => <li>{item}</li>)}</ul></div>
+          </div>
+          <h3 class="winflo-subheading">If the Customer wants similar features in another shoe</h3>
+          <p class="winflo-centered">{courseData.recap.alternatives}</p>
+          <div class="winflo-outline-callout"><h3>Easy closing line</h3><p><q>{courseData.recap.closingLine}</q></p></div>
+          <p class="winflo-centered">{courseData.recap.closing}</p>
         </div>
       </section>
     </main>
@@ -93,29 +182,33 @@ import CourseLayout from "../layouts/CourseLayout.astro";
   </div>
 
   <script>
-    const navToggle = document.querySelector<HTMLButtonElement>(".nav-toggle");
+    const navToggle = document.querySelector<HTMLButtonElement>(".lessons-toggle");
     const courseLinks = document.querySelector<HTMLElement>(".course-links");
     const navLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(".course-links a"));
+    const header = document.querySelector<HTMLElement>(".site-header");
+
+    const syncHeaderOffset = () => {
+      if (header) document.documentElement.style.setProperty("--course-header-offset", `${Math.ceil(header.getBoundingClientRect().height + 8)}px`);
+    };
+    syncHeaderOffset();
+    if (header && "ResizeObserver" in window) new ResizeObserver(syncHeaderOffset).observe(header);
 
     const closeNavigation = () => {
       navToggle?.setAttribute("aria-expanded", "false");
-      navToggle?.querySelector(".sr-only")?.replaceChildren("Open course navigation");
-      courseLinks?.classList.remove("is-open");
+      if (courseLinks) courseLinks.hidden = true;
     };
 
     navToggle?.addEventListener("click", () => {
       const willOpen = navToggle.getAttribute("aria-expanded") !== "true";
       if (willOpen) window.dispatchEvent(new CustomEvent("course-progress:close-panel"));
       navToggle.setAttribute("aria-expanded", String(willOpen));
-      navToggle.querySelector(".sr-only")?.replaceChildren(willOpen ? "Close course navigation" : "Open course navigation");
-      courseLinks?.classList.toggle("is-open", willOpen);
+      if (courseLinks) courseLinks.hidden = !willOpen;
     });
 
     navLinks.forEach((link) => link.addEventListener("click", closeNavigation));
     window.addEventListener("course-progress:panel-open", closeNavigation);
-    const mobileNavigation = window.matchMedia("(max-width: 64rem)");
-    mobileNavigation.addEventListener("change", (event) => {
-      if (!event.matches) closeNavigation();
+    document.addEventListener("pointerdown", (event) => {
+      if (navToggle?.getAttribute("aria-expanded") === "true" && !(event.target as Element).closest(".lessons-menu")) closeNavigation();
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && navToggle?.getAttribute("aria-expanded") === "true") {
@@ -124,26 +217,14 @@ import CourseLayout from "../layouts/CourseLayout.astro";
       }
     });
 
-    const revealButton = document.querySelector<HTMLButtonElement>(".reveal-button");
-    const revealResponse = document.querySelector<HTMLElement>(".reveal-response");
-    revealButton?.addEventListener("click", () => {
-      const isOpen = revealButton.getAttribute("aria-expanded") === "true";
-      revealButton.setAttribute("aria-expanded", String(!isOpen));
-      const label = isOpen ? revealButton.dataset.openLabel : revealButton.dataset.closeLabel;
-      const labelNode = revealButton.querySelector("span:first-child");
-      const iconNode = revealButton.querySelector("span:last-child");
-      if (labelNode && label) labelNode.textContent = label;
-      if (iconNode) iconNode.textContent = isOpen ? "+" : "−";
-      if (revealResponse) revealResponse.hidden = isOpen;
-      window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: "interaction" } }));
-    });
-
     if ("IntersectionObserver" in window) {
       const sections = document.querySelectorAll<HTMLElement>("[data-nav-section]");
       const setActiveNavigation = (sectionId: string) => {
         navLinks.forEach((link) => {
           const active = link.hash === `#${sectionId}`;
-          if (active) link.setAttribute("aria-current", "location");
+          if (active) {
+            link.setAttribute("aria-current", "location");
+          }
           else link.removeAttribute("aria-current");
         });
       };
@@ -153,9 +234,9 @@ import CourseLayout from "../layouts/CourseLayout.astro";
           if (finalSection) setActiveNavigation(finalSection.id);
           return;
         }
-        const readingLine = window.scrollY + window.innerHeight * 0.5;
+        const readingLine = (header?.getBoundingClientRect().height ?? 0) + 24;
         const currentSection = Array.from(sections).reduce((current, section) => (
-          section.offsetTop <= readingLine ? section : current
+          section.getBoundingClientRect().top <= readingLine ? section : current
         ), sections.item(0));
         if (currentSection) setActiveNavigation(currentSection.id);
       };

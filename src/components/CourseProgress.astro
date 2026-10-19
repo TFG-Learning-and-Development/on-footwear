@@ -265,31 +265,30 @@ const config = { milestones, storageKey };
 
 <style>
   .course-progress { position: relative; flex: 0 0 auto; align-self: center; font-family: "Arial Nova", Arial, Helvetica, sans-serif; line-height: 1.3; }
-  .course-progress__trigger { display: flex; min-height: 2.75rem; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem; border: 1px solid rgb(255 255 255 / 45%); border-radius: 0.35rem; background: transparent; color: #fff; cursor: pointer; }
+  .course-progress__trigger { display: flex; min-height: 2.75rem; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem; border: 1px solid #fff; border-radius: 0.35rem; background: transparent; color: #fff; font-size: var(--course-type-ui-size); cursor: pointer; }
   .course-progress__trigger:hover, .course-progress__trigger[aria-expanded="true"] { background: rgb(255 255 255 / 14%); }
-  .course-progress__trigger span { font-size: 13px; line-height: 1; }
-  .course-progress__trigger strong { font-size: 14px; line-height: 1; }
+  .course-progress__trigger span { font-size: inherit; line-height: 1; }
+  .course-progress__trigger strong { font-size: inherit; line-height: 1; }
   .course-progress__panel { position: absolute; top: calc(100% + 0.75rem); right: 0; z-index: 40; width: min(340px, calc(100vw - 2rem)); max-height: min(42rem, calc(100dvh - 6.5rem)); overflow-y: auto; padding: 24px 20px; border: 1px solid #dfe5ea; border-radius: 0.35rem; background: #fff; box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 22%); color: #071827; }
   .course-progress__panel[hidden] { display: none; }
   .course-progress__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
   .course-progress__header p { margin: 0 0 4px; color: #435261; font-size: 13px; line-height: 1.2; }
   .course-progress__header strong { font-size: 22px; line-height: 1.1; }
-  .course-progress__close { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: #e1e5e7; color: #002546; font-size: 26px; line-height: 1; cursor: pointer; }
-  .course-progress__close:hover, .course-progress__close:focus-visible { background: var(--course-accent); color: #fff; outline: 2px solid var(--focus-on-light); outline-offset: 2px; }
-  .course-progress__bar { height: 10px; margin: 20px 0 18px; overflow: hidden; border-radius: 999px; background: #e1e5e7; }
+  .course-progress__close { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: #e1e5e7; color: var(--course-accent); font-size: 26px; line-height: 1; cursor: pointer; }
+  .course-progress__close:hover, .course-progress__close:focus-visible { background: var(--course-accent); color: var(--ink); outline: 2px solid var(--focus-on-light); outline-offset: 2px; }
+  .course-progress__bar { height: 10px; margin: 20px 0 18px; overflow: hidden; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px #6d777d; }
   .course-progress__bar span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--course-accent); transition: width 0.2s ease; }
   .course-progress__list-group + .course-progress__list-group { margin-top: 14px; }
   .course-progress__list-group h2 { margin: 0 0 5px; color: #071827; font-size: 16px; line-height: 1.15; }
   .course-progress__list-group ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
   :global(.course-progress__list-group li) { margin: 0; }
-  :global(.course-progress__list-group a) { display: block; color: #254f73; font-size: 14px; line-height: 1.35; text-align: left; text-decoration: underline; text-decoration-color: rgba(37, 79, 115, 0.35); text-underline-offset: 2px; }
+  :global(.course-progress__list-group a) { display: block; color: var(--course-accent); font-size: 14px; line-height: 1.35; text-align: left; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--course-accent) 35%, transparent); text-underline-offset: 2px; }
   :global(.course-progress__list-group a[data-complete="true"]) { color: #435261; text-decoration: none; }
-  .course-progress__reset { width: 100%; min-height: 42px; margin-top: 18px; padding: 9px 12px; border: 1px solid rgba(0, 37, 70, 0.18); border-radius: 999px; background: #fff; color: #435261; font-size: 14px; font-weight: 700; cursor: pointer; }
-  .course-progress__reset:hover, .course-progress__reset:focus-visible { border-color: #002546; outline: 2px solid rgba(0, 37, 70, 0.25); outline-offset: 2px; }
+  .course-progress__reset { width: 100%; min-height: 42px; margin-top: 18px; padding: 9px 12px; border: 1px solid color-mix(in srgb, var(--course-accent) 18%, transparent); border-radius: 999px; background: #fff; color: #435261; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .course-progress__reset:hover, .course-progress__reset:focus-visible { border-color: var(--course-accent); outline: 2px solid var(--course-accent); outline-offset: 2px; }
   @media (max-width: 64rem) {
     .course-progress__trigger { min-height: 2.75rem; padding-inline: 0.6rem; }
-    .course-progress__trigger span { font-size: 12px; }
-    .course-progress__panel { right: -3.35rem; max-height: calc(100dvh - 5.75rem); }
+    .course-progress__panel { right: 0; max-height: calc(100dvh - 5.75rem); }
   }
   @media (prefers-reduced-motion: reduce) { .course-progress__bar span { transition: none; } }
 </style>
