@@ -13,7 +13,7 @@
   --course-accent-strong: #000000;
   --nav-hover-background: rgb(255 255 255 / 8%);
   --nav-hover-indicator: var(--course-accent);
-  --nav-active-background: color-mix(in srgb, var(--course-accent) 30%, transparent);
+  --nav-active-background: var(--course-accent);
   --nav-active-indicator: var(--course-accent);
   --focus-on-light: var(--course-accent);
   --focus-on-dark: #ffffff;
@@ -56,7 +56,8 @@ img, svg { display: block; max-width: 100%; }
 .course-links__heading { margin: 0; padding: 0.35rem 0.55rem 0.45rem; color: #c7d7de; font-size: var(--course-type-compact-size); font-weight: 700; line-height: var(--course-type-compact-line-height); letter-spacing: 0.08em; text-transform: uppercase; }
 .course-links a { display: flex; min-height: 2.75rem; align-items: center; gap: 0.7rem; padding: 0.5rem 0.55rem; color: white; border-left: 0.2rem solid transparent; border-radius: 0.25rem; font-size: var(--course-type-ui-size); line-height: var(--course-type-ui-line-height); text-decoration: none; }
 .course-links a:hover { background: var(--nav-hover-background); border-left-color: var(--nav-hover-indicator); }
-.course-links a[aria-current="location"] { background: var(--nav-active-background); border-left-color: var(--nav-active-indicator); font-weight: 700; }
+.course-links a[aria-current="location"] { color: var(--ink); background: var(--nav-active-background); border-left-color: var(--nav-active-indicator); font-weight: 700; }
+.course-links a[aria-current="location"] .course-links__number { color: var(--ink); }
 .course-links__number { flex: 0 0 1.3rem; color: #c7d7de; font-size: var(--course-type-compact-size); }
 
 .hero { min-height: 36rem; display: grid; align-items: center; color: white; background: linear-gradient(125deg, var(--ink), var(--course-accent-strong) 70%, var(--course-accent)); overflow: hidden; }
@@ -114,7 +115,6 @@ img, svg { display: block; max-width: 100%; }
 .responsive-table th, .responsive-table td { padding: 0.8rem; border: 1px solid var(--line); font-size: var(--course-type-body-size); line-height: var(--course-type-body-line-height); text-align: left; vertical-align: top; }
 .responsive-table th { font-weight: 700; }
 .responsive-table--dark { color: white; background: var(--ink); }
-.table-scroll-hint { color: var(--muted); font-size: var(--course-type-compact-size); line-height: var(--course-type-compact-line-height); }
 .dialogue { display: grid; gap: 1rem; }
 .dialogue-bubble, .dialogue-response { display: flex; gap: 1rem; padding: 1.2rem; background: var(--surface-soft); }
 .dialogue-avatar { flex: 0 0 auto; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; color: var(--ink); background: var(--course-accent); border-radius: 50%; }

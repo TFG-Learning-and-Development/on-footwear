@@ -12,7 +12,7 @@
   --qc-type-rule: var(--line);
   --qc-type-surface-muted: var(--surface-soft);
   --qc-type-surface-secondary: #dce2e5;
-  --qc-type-surface-accent: #e2eef0;
+  --qc-type-surface-accent: var(--course-accent);
   --qc-type-surface-success: #dcefe0;
   --qc-type-surface-warning: #fff0d7;
   --qc-type-surface-error: #fee2e2;

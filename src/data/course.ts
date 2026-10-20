@@ -106,12 +106,12 @@ export const courseData = {
       response: "The Winflo 12 could complement your faster shoe. Its soft cushioning and broad platform suit easy-paced recovery runs and everyday walking. Try it on and compare the fit and feel with your current shoes.",
     },
     needs: [
-      { title: "I want a soft shoe for easy runs.", image: "/assets/winflo-air.webp", imageAlt: "Winflo 12 cushioned heel detail", fields: [{ label: "You can say", text: "The soft cushioning helps keep you comfortable during easy runs." }] },
-      { title: "I usually land on my heel.", image: "/assets/winflo-air.webp", imageAlt: "Nike Air unit at the heel of the Winflo 12", fields: [{ label: "You can say", text: "The Nike Air unit adds cushioning around the heel to help with impact." }] },
-      { title: "My shoes often feel too tight.", image: "/assets/winflo-top.webp", imageAlt: "Top view of the Winflo 12 fit", fields: [{ label: "You can say", text: "The Winflo 12 has a roomy fit that feels comfortable and secure." }] },
-      { title: "I want the shoe to feel stable.", image: "/assets/winflo-side.webp", imageAlt: "Broad base of the Winflo 12", fields: [{ label: "You can say", text: "The wider base helps the shoe feel stable underfoot." }] },
-      { title: "My feet get warm.", image: "/assets/winflo-upper.webp", imageAlt: "Breathable upper of the Winflo 12", fields: [{ label: "You can say", text: "The breathable upper allows air to move through the shoe." }] },
-      { title: "I want a shoe for racing.", image: "/assets/winflo-pair.webp", imageAlt: "Pair of Nike Winflo 12 everyday road-running shoes", fields: [{ label: "You can say", text: "The Winflo 12 is made for comfortable everyday running. Let us look at a lighter performance shoe for racing." }] },
+      { id: "soft", customer: "I want a soft shoe for easy runs.", benefit: "The soft cushioning helps keep you comfortable during easy runs." },
+      { id: "heel", customer: "I usually land on my heel.", benefit: "The Nike Air unit adds cushioning around the heel to help with impact." },
+      { id: "fit", customer: "My shoes often feel too tight.", benefit: "The Winflo 12 has a roomy fit that feels comfortable and secure." },
+      { id: "stable", customer: "I want the shoe to feel stable.", benefit: "The wider base helps the shoe feel stable underfoot." },
+      { id: "warm", customer: "My feet get warm.", benefit: "The breathable upper allows air to move through the shoe." },
+      { id: "racing", customer: "I want a shoe for racing.", benefit: "The Winflo 12 is made for comfortable everyday running. Let us look at a lighter performance shoe for racing." },
     ],
   },
   practice: {

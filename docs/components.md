@@ -74,7 +74,7 @@ Properties:
 
 ## `CourseProgress` and `ExploreGroup`
 
-Completion configuration, activity attributes, events, persistence, reset behaviour, and examples for sections, videos, questions, matching, accordions, cards, and tabs are documented in [`completion-tracking.md`](completion-tracking.md).
+Completion configuration, activity attributes, events, persistence, internal test reset behavior, and examples for sections, videos, questions, matching, accordions, cards, and tabs are documented in [`completion-tracking.md`](completion-tracking.md).
 
 ## Shared theme
 

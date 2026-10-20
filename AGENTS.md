@@ -8,8 +8,8 @@ This repository is a reusable Astro course shell.
 - Do not perform general Astro or dependency upgrades unless the user explicitly requests them. Targeted compatible security fixes are allowed after inspecting the audit and dependency paths; explain framework-major or otherwise breaking changes before implementation.
 - Keep learner-facing course information in `src/data/course.ts` where practical.
 - Preserve responsive navigation, keyboard access, visible focus states, the skip link and reduced-motion support.
-- Keep the starter independent of credentials, analytics, deployment accounts and LMS services.
-- Treat SCORM as pending. Do not add completion rules, LMS calls, manifests or packages without confirmed requirements.
+- Keep the course independent of credentials, analytics and deployment accounts. The SCORM 1.2 package uses only the LMS API supplied by its launch window.
+- This course uses requirements-based SCORM 1.2 completion. Never complete on launch, tab hiding or exit; use the configured required milestones and preserve completed/passed LMS status.
 - Add course-specific assets under `public/assets/`, use descriptive alt text, and remove unused files after checking references.
 - Keep the default footer wording exactly `Return to People Connect to continue` for every course. It remains plain static text with no link, control, completion event or LMS action. Set the footer background through the course theme to follow the supplied mood board or design board, and maintain readable contrast; keep the Back to top control unchanged.
 - Keep the default header logo-only with an accessible home-link name and a distortion-free logo slot that accepts different aspect ratios. Use the wide responsive header pattern: logo, flexible space, navigation links, then Progress at the padded right edge. Support at least five realistic navigation labels and collapse to the mobile disclosure before they wrap, overlap or crowd adjacent controls.
@@ -38,12 +38,11 @@ This repository is a reusable Astro course shell.
 - Theme every course's progress UI through the shared `--course-accent` token so it inherits the supplied visual-board accent automatically. Do not hard-code a separate progress colour; keep the unfilled track neutral and verify readable contrast.
 - Replace the starter milestones with course-specific requirements derived from the storyboard and the content actually implemented.
 - Connect required content, videos and interactions to the existing VIEW, WATCH, attempt-based SUBMIT or COMPLETE, and EXPLORE triggers as appropriate.
-- Preserve the approved tracking rules and defaults, including VIEW dwell behavior, WATCH unique-range thresholds, attempt-based completion, EXPLORE completion, equal weighting, persistence, restoration and reset.
+- Preserve the approved tracking rules and defaults, including VIEW dwell behavior, WATCH unique-range thresholds, attempt-based completion, EXPLORE completion, equal weighting, persistence and restoration. Keep the learner-facing Reset Progress control absent; activity-level Retry/Clear controls may remain.
 - Exclude optional resources, navigation, footer copy and Back to top from required completion.
-- Validate unique milestone and target IDs, working targets and triggers, a course-specific versioned storage key, persistence and restoration.
+- Validate unique milestone and target IDs, working targets and triggers, a course-specific versioned storage key, browser persistence, LMS suspend/resume and isolation from stale browser progress.
 
 ### Handover readiness
 
 - Include typography and completion-tracking checks in every documented build handover, alongside `npm run build` and `npm run verify` results.
-- Describe the included completion system as browser tracking only. Do not represent it as LMS or SCORM reporting.
-- Report any missing LMS runtime, LMS reporting, manifest, launch wrapper or SCORM packaging infrastructure as outstanding work.
+- Report `npm run build`, `npm run verify`, `npm run package:scorm` and `npm run verify:scorm` for this course. Distinguish simulated LMS verification from live People Connect testing.

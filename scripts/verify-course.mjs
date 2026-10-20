@@ -100,7 +100,7 @@ try {
 
   await execFileAsync(process.execPath, [astroCli, "build", "--outDir", verificationDist], {
     cwd: process.cwd(),
-    env: { ...process.env, COURSE_VERIFY_COMPONENTS: "1" },
+    env: { ...process.env, COURSE_VERIFY_COMPONENTS: "1", PUBLIC_COURSE_VERIFY: "1" },
   });
 
   fail(!(await fileExists(path.join(verificationDist, "__verify-components", "index.html"))), "component verification route was not generated");
@@ -339,8 +339,19 @@ try {
       await page.locator("[data-practice-prev]").click();
       fail(!(await firstOption.isChecked()) || !(await page.locator("#practice-1 [data-practice-feedback]").isVisible()), `${label} practice response was not retained`);
 
+      const matching = page.locator("#needs-match");
+      fail((await matching.locator("[data-match-id]").count()) !== 6 || (await page.locator("#needs-carousel").count()) !== 0, `${label} Customer needs were not replaced with six matching prompts`);
+      await checkFocus(page, "#needs-match select", `${label} matching response selector`);
+      await matching.locator("[data-match-submit]").press("Enter");
+      fail(!(await matching.locator("[data-match-feedback]").textContent()).includes("Choose at least one"), `${label} blank matching feedback is missing`);
+      fail((await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}").completed?.includes("needs-match"))), `${label} blank matching submission counted as an attempt`);
+      await matching.locator('[data-match-id="soft"] select').selectOption("heel");
+      await matching.locator("[data-match-submit]").click();
+      fail((await matching.locator('[data-match-id="soft"]').getAttribute("data-result")) !== "incorrect", `${label} incorrect matching feedback is missing`);
+      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}").completed?.includes("needs-match"))), `${label} genuine matching attempt did not complete the milestone`);
+
       if (viewport.width === 1440) {
-        for (const [carouselId, total] of [["technology-carousel", 6], ["fit-carousel", 5], ["needs-carousel", 6]]) {
+        for (const [carouselId, total] of [["technology-carousel", 6], ["fit-carousel", 5]]) {
           const carousel = page.locator(`#${carouselId}`);
           for (let item = 2; item <= total; item += 1) {
             await carousel.locator("[data-carousel-next]").click();
@@ -351,6 +362,12 @@ try {
           await carousel.locator("[data-carousel-prev]").click();
           fail((await carousel.locator("[data-carousel-count]").textContent()) !== `${total - 1} of ${total}`, `${carouselId} previous control did not work`);
         }
+        for (const id of ["soft", "heel", "fit", "stable", "warm", "racing"]) await matching.locator(`[data-match-id="${id}"] select`).selectOption(id);
+        await matching.locator("[data-match-submit]").click();
+        fail((await matching.locator('[data-match-feedback]').textContent()) !== "All 6 matches are correct.", "correct matching feedback is missing");
+        fail((await matching.locator('[data-match-id][data-result="correct"]').count()) !== 6, "not all six matching rows were marked correct");
+        await matching.locator('[type="reset"]').click();
+        fail((await matching.locator('select').evaluateAll((elements) => elements.some((element) => element.value !== ""))) || await matching.locator('[data-match-feedback]').isVisible(), "matching clear action did not reset selections and feedback");
         await page.locator("[data-practice-next]").click();
         await page.locator("#practice-2 input[value='0']").check();
         await page.locator("#practice-2 [type='submit']").click();
@@ -363,9 +380,13 @@ try {
         await page.locator("#practice-3 [type='submit']").click();
         fail(!(await page.locator("#practice-3 [data-practice-feedback]").textContent()).includes("Correct."), "question 3 correct feedback is missing");
         const courseState = await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}"));
-        for (const activityId of ["technology-carousel", "fit-carousel", "needs-carousel", "practice-1", "practice-2", "practice-3"]) {
+        for (const activityId of ["technology-carousel", "fit-carousel", "needs-match", "practice-1", "practice-2", "practice-3"]) {
           fail(!courseState.completed?.includes(activityId), `${activityId} did not complete in course-specific storage`);
         }
+        const restoredPage = await context.newPage();
+        await restoredPage.goto(baseUrl, { waitUntil: "networkidle" });
+        fail((await restoredPage.locator('[data-progress-completed] [data-progress-target="needs-match"]').count()) !== 1, "Customer needs matching completion was not restored after reopening the course");
+        await restoredPage.close();
       }
 
       await page.locator("#lesson-8").evaluate((element) => element.scrollIntoView({ block: "start" }));
@@ -504,8 +525,12 @@ try {
       await page.evaluate(() => window.__setFixtureRanges([[20, 90]]));
       fail(!(await state()).completed.includes("fixture-watch"), `${label} did not merge unique video ranges to the 80% WATCH threshold`);
 
-      await page.locator("#fixture-question [data-completion-option]").click();
-      fail(!(await state()).completed.includes("fixture-question"), `${label} did not complete a knowledge check on answer selection`);
+      await page.locator("#fixture-question button[type='submit']").click();
+      fail((await state()).completed.includes("fixture-question"), `${label} completed a knowledge check on empty submission`);
+      await page.locator("#fixture-question [data-completion-option]").check();
+      fail((await state()).completed.includes("fixture-question"), `${label} completed a knowledge check on selection without submission`);
+      await page.locator("#fixture-question button[type='submit']").click();
+      fail(!(await state()).completed.includes("fixture-question"), `${label} did not complete a knowledge check on valid submission`);
       await page.locator("[data-match-submit]").click();
       fail((await state()).completed.includes("fixture-match"), `${label} completed matching without a selection`);
       await page.locator("[data-match-choice]").click();
@@ -541,7 +566,7 @@ try {
       fail(await panel.isVisible(), `${label} activity navigation did not close the dropdown`);
       fail(!(await page.evaluate(() => location.hash.startsWith("#fixture-"))), `${label} activity navigation did not update the destination`);
       await page.locator("[data-progress-trigger]").click();
-      await page.locator("[data-progress-reset]").click();
+      await page.evaluate(() => window.dispatchEvent(new Event("course-progress:test-reset")));
       fail(await page.evaluate(() => localStorage.getItem("astro-course-progress:verification-fixture:v1") !== null), `${label} reset did not clear its course storage`);
       fail(!(await page.evaluate(() => localStorage.getItem("astro-course-progress:other-course:v1") !== null)), `${label} reset cleared another course's storage`);
       fail((await page.locator("[data-progress-percent]").textContent()) !== "0%", `${label} reset did not clear required completion`);
@@ -707,5 +732,5 @@ if (errors.length) {
   console.error(errors.join("\n"));
   process.exitCode = 1;
 } else {
-  console.log(`Course verification passed: ${viewports.map(labelFor).join(", ")}; responsive navigation, progress dropdown, anchors, active-section and back-to-top capsule behaviour; carousel and practice interactions; keyboard and reduced-motion support; completion types, persistence, reset and storage isolation; shared-token hero, progress and focus theming; typography roles and overrides; a 200% browser-zoom equivalent; and reusable component fixtures at ${componentViewports.map(labelFor).join(", ")}.`);
+  console.log(`Course verification passed: ${viewports.map(labelFor).join(", ")}; responsive navigation, progress dropdown, anchors, active-section and back-to-top capsule behaviour; carousel and practice interactions; keyboard and reduced-motion support; completion types, persistence, internal test reset and storage isolation; shared-token hero, progress and focus theming; typography roles and overrides; a 200% browser-zoom equivalent; and reusable component fixtures at ${componentViewports.map(labelFor).join(", ")}.`);
 }

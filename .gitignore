@@ -10,7 +10,7 @@ dist/
 .env.*
 !.env.example
 
-# generated SCORM output (integration is pending)
+# generated SCORM package
 *.zip
 scorm-output/
 

@@ -8,7 +8,7 @@ const milestones: CompletionMilestone[] = [
   { id: "fixture-view", label: "View", type: "view", targetId: "fixture-view", required: true },
   { id: "fixture-watch", label: "Watch", type: "watch", targetId: "fixture-watch", required: true },
   { id: "fixture-question", label: "Question", type: "submit", targetId: "fixture-question", required: true },
-  { id: "fixture-match", label: "Matching", type: "submit", targetId: "fixture-match", required: true },
+  { id: "fixture-match", label: "Matching", type: "complete", targetId: "fixture-match", required: true },
   { id: "fixture-explore", label: "Explore", type: "explore", targetId: "fixture-explore", required: true },
   { id: "fixture-tabs", label: "Tabs", type: "explore", targetId: "fixture-tabs", required: true },
   { id: "fixture-complete", label: "Complete event", type: "complete", targetId: "fixture-complete", required: true },
@@ -16,17 +16,18 @@ const milestones: CompletionMilestone[] = [
 ];
 ---
 <!doctype html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width" /><title>Completion fixture</title></head>
-<body><header class="fixture-header"><CourseProgress {milestones} storageKey="astro-course-progress:verification-fixture:v1" /></header>
+<body data-completion-fixture><header class="fixture-header"><CourseProgress {milestones} storageKey="astro-course-progress:verification-fixture:v1" /></header>
 <main>
   <section id="fixture-view" data-completion-id="fixture-view"><h1>View fixture</h1></section>
   <video id="fixture-watch" data-completion-id="fixture-watch"></video>
-  <section id="fixture-question" data-completion-id="fixture-question"><button type="button" data-completion-option>Incorrect answer still counts</button></section>
+  <section id="fixture-question" data-completion-id="fixture-question"><form><label><input type="radio" name="answer" value="incorrect" data-completion-option />Incorrect answer still counts</label><button type="submit">Submit answer</button></form></section>
   <section id="fixture-match" data-completion-id="fixture-match"><button type="button" data-match-choice>Select match</button><button type="button" data-match-submit>Submit match</button></section>
   <ExploreGroup id="fixture-explore" title="Explore fixture" variant="accordion" items={[{ id: "one", title: "One", body: "One" }, { id: "two", title: "Two", body: "Two" }]} />
   <ExploreGroup id="fixture-tabs" title="Tab fixture" variant="tabs" items={[{ id: "first", title: "First", body: "First" }, { id: "second", title: "Second", body: "Second" }]} />
   <button id="fixture-complete" type="button" data-completion-id="fixture-complete">Complete event</button><button id="fixture-optional" type="button" data-completion-id="fixture-optional">Optional event</button>
 </main>
 <script>
+  document.querySelector("#fixture-question form")?.addEventListener("submit", (event) => event.preventDefault());
   let matchSelected = false;
   document.querySelector("[data-match-choice]")?.addEventListener("click", () => { matchSelected = true; });
   document.querySelector("[data-match-submit]")?.addEventListener("click", () => { if (matchSelected) window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: "fixture-match" } })); });

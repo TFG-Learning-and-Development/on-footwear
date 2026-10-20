@@ -1,0 +1,100 @@
+---
+interface Pair {
+  id: string;
+  customer: string;
+  benefit: string;
+}
+interface Props {
+  id: string;
+  pairs: readonly Pair[];
+}
+
+const { id, pairs } = Astro.props as Props;
+const choices = [...pairs].sort((first, second) => first.benefit.localeCompare(second.benefit, "en"));
+---
+
+<form id={id} class="winflo-match" data-winflo-match data-completion-id={id} aria-label="Match Customer needs to benefits" aria-describedby={`${id}-instructions`}>
+  <p class="winflo-match__instructions" id={`${id}-instructions`}>Match each Customer need with the best response. Use each response letter once, then check your matches.</p>
+  <div class="winflo-match__layout">
+    <div class="winflo-match__responses">
+      <h4>You can say…</h4>
+      <ol>
+        {choices.map((choice, index) => (
+          <li>
+            <strong class="winflo-match__letter">{String.fromCharCode(65 + index)}</strong>
+            <q>{choice.benefit}</q>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <div class="winflo-match__needs">
+      <h4>If the Customer says…</h4>
+      <ol>
+        {pairs.map((pair, index) => (
+          <li data-match-id={pair.id}>
+            <label for={`${id}-${pair.id}`}><q>{pair.customer}</q></label>
+            <select id={`${id}-${pair.id}`} name={`match-${index + 1}`} aria-describedby={`${id}-${pair.id}-status`}>
+              <option value="">Choose a response letter</option>
+              {choices.map((choice, choiceIndex) => <option value={choice.id}>{String.fromCharCode(65 + choiceIndex)}</option>)}
+            </select>
+            <span class="winflo-match__status" id={`${id}-${pair.id}-status`} data-match-status hidden></span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+  <div class="winflo-match__actions">
+    <button class="winflo-match__submit" type="submit" data-match-submit>Check matches</button>
+    <button class="winflo-match__clear" type="reset">Clear selections</button>
+  </div>
+  <p class="winflo-match__feedback" data-match-feedback role="status" aria-live="polite" hidden></p>
+</form>
+
+<script>
+  const match = document.querySelector<HTMLFormElement>("[data-winflo-match]");
+  if (match) {
+    const rows = Array.from(match.querySelectorAll<HTMLElement>("[data-match-id]"));
+    const feedback = match.querySelector<HTMLElement>("[data-match-feedback]");
+    const clearFeedback = () => {
+      rows.forEach((row) => {
+        delete row.dataset.result;
+        const status = row.querySelector<HTMLElement>("[data-match-status]");
+        if (status) { status.hidden = true; status.textContent = ""; }
+      });
+      if (feedback) { feedback.hidden = true; feedback.textContent = ""; delete feedback.dataset.result; }
+    };
+
+    match.addEventListener("change", clearFeedback);
+    match.addEventListener("reset", clearFeedback);
+    match.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const selected = rows.filter((row) => row.querySelector<HTMLSelectElement>("select")?.value);
+      if (selected.length === 0) {
+        if (feedback) { feedback.hidden = false; feedback.textContent = "Choose at least one response before checking your matches."; feedback.dataset.result = "unanswered"; }
+        return;
+      }
+
+      let correct = 0;
+      rows.forEach((row) => {
+        const value = row.querySelector<HTMLSelectElement>("select")?.value;
+        const status = row.querySelector<HTMLElement>("[data-match-status]");
+        const result = !value ? "unanswered" : value === row.dataset.matchId ? "correct" : "incorrect";
+        if (result === "correct") correct += 1;
+        row.dataset.result = result;
+        if (status) {
+          status.hidden = false;
+          status.textContent = result === "correct" ? "Correct match" : result === "incorrect" ? "Try another response" : "Choose a response";
+        }
+      });
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.dataset.result = correct === rows.length ? "correct" : "retry";
+        feedback.textContent = correct === rows.length
+          ? `All ${rows.length} matches are correct.`
+          : `${correct} of ${rows.length} matches are correct. Review the marked statements and try again.`;
+      }
+      window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: match.id } }));
+    });
+    window.addEventListener("course-progress:reset", () => { match.reset(); clearFeedback(); });
+  }
+</script>

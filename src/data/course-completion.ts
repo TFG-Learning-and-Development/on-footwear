@@ -24,7 +24,7 @@ export const completionMilestones: CompletionMilestone[] = [
   { id: "lesson-5", label: "Product updates", type: "view", targetId: "lesson-5", required: true },
   { id: "lesson-6", label: "A-M-E-R selling message", type: "view", targetId: "lesson-6", required: true },
   { id: "lesson-7", label: "Customer scenarios", type: "view", targetId: "lesson-7", required: true },
-  { id: "needs-carousel", label: "Explore six Customer needs", type: "explore", targetId: "needs-carousel", required: true },
+  { id: "needs-match", label: "Attempt Customer needs matching", type: "complete", targetId: "needs-match", required: true },
   { id: "lesson-8", label: "Practice lesson", type: "view", targetId: "lesson-8", required: true },
   { id: "practice-1", label: "Attempt practice question 1", type: "complete", targetId: "practice-1", required: true },
   { id: "practice-2", label: "Attempt practice question 2", type: "complete", targetId: "practice-2", required: true },

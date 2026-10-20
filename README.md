@@ -25,7 +25,7 @@ npm run preview
 
 Use `npm ci` for a clean, lockfile-exact install. On a fresh Linux CI image, Playwright may also require `npx playwright install --with-deps chromium`. Do not replace the lockfile with a lockfile from another package manager.
 
-The starter runs locally without credentials, environment variables or an LMS connection. Its only external dependencies are the packages recorded in `package-lock.json`; no external runtime services, fonts, images or analytics are used.
+The course runs standalone without credentials or environment variables. When an LMS launches the SCORM package, the course uses the LMS-provided SCORM 1.2 API. Its only external build dependencies are the packages recorded in `package-lock.json`; no external runtime services, fonts, images or analytics are used.
 
 ## File map
 
@@ -81,21 +81,21 @@ After editing content, run `npm run build` and `npm run verify`. The verifier cr
 
 Completion tracking is part of every course build; it does not require a separate request. Replace the starter milestones in `src/data/course-completion.ts` with course-specific requirements derived from the storyboard and the content actually implemented. Connect required sections, videos and interactions to the existing VIEW, WATCH, attempt-based SUBMIT or COMPLETE, and EXPLORE triggers. Preserve the approved defaults and event contracts.
 
-Optional resources, navigation, the fixed footer message and Back to top must not contribute to required completion. Before handover, validate unique milestone and target IDs, working targets and triggers, the course-specific versioned storage key, saved progress, restoration and reset. See [`docs/completion-tracking.md`](docs/completion-tracking.md) for the exact contracts.
+Optional resources, navigation, the fixed footer message and Back to top must not contribute to required completion. Before handover, validate unique milestone and target IDs, working targets and triggers, the course-specific versioned storage key, browser persistence and LMS suspend/resume. The learner-facing Reset Progress control is absent. See [`docs/completion-tracking.md`](docs/completion-tracking.md) for the exact contracts.
 
 ## Build handover requirements
 
-Every handover must report `npm run build` and `npm run verify`, including the typography and completion-tracking checks. State clearly that the included progress system is browser-based tracking stored in `localStorage`, not LMS or SCORM reporting. If an LMS runtime, reporting connection, manifest, launch wrapper or SCORM package has not been implemented and tested, list it as outstanding infrastructure.
+Every handover must report `npm run build`, `npm run verify`, `npm run package:scorm` and `npm run verify:scorm`, including typography, completion-tracking and extracted-ZIP checks. The package reports requirements-based completion through the LMS-provided SCORM 1.2 API; standalone use saves browser progress only. Simulated LMS verification does not replace live People Connect import and launch testing.
 
 ## Hosting assumptions
 
-The default build is a static site in `dist/` intended to be served at a domain root. Astro's generated CSS URL and the documented course-asset URLs are root-relative. A basic static host must serve `dist/index.html` for `/` and the generated files beneath `dist/_astro/` and `dist/assets/`.
+The default build is a static site in `dist/` intended to be served at a domain root. Astro's generated CSS URL and course-asset URLs are root-relative. A basic static host must serve `dist/index.html` for `/` and the generated files beneath `dist/_astro/` and `dist/assets/`.
 
-Subdirectory hosting requires a reviewed Astro `base` configuration and corresponding asset references. Future SCORM packaging must also establish the LMS launch path, relative-asset strategy, manifest requirements and target LMS behaviour. The current output has not been tested as a ZIP or SCORM package and should not be described as package-compatible.
+`npm run package:scorm` rewrites those asset references inside the package to relative paths, so the LMS can launch the course under its own nested path. The ordinary `dist/` build retains its root-hosting behavior.
 
 ## SCORM status
 
-SCORM integration is pending. The starter contains browser-local completion rules and persisted progress, but no LMS runtime, LMS reporting connection, manifest, launch wrapper or packaging command. Confirm the target SCORM version, LMS requirements, completion criteria and suspend-data strategy before adding that separate integration.
+This course has a single-SCO SCORM 1.2 runtime and manifest. Run `npm run build`, then `npm run package:scorm`; the ZIP is `scorm-output/Content-SCORM-1.2.zip`. Run `npm run verify` and `npm run verify:scorm` before handover. `verify:scorm` extracts the ZIP and simulates the SCORM API; it does not test the live People Connect LMS. The LMS attempt and `cmi.suspend_data` are authoritative during an LMS launch; standalone use retains course-specific `localStorage` progress. There are no scores, pass/fail rules, LMS credentials or external services.
 
 ## Optional WASM packages
 

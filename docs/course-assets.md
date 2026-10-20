@@ -9,4 +9,4 @@ Add course-specific images, documents and other static media under `public/asset
 - Remove assets that are no longer used by the course.
 - Optimise media for its intended display size and test downloads, captions and playback where applicable.
 
-Root-relative paths require additional configuration before the course can be hosted in a subdirectory or packaged for an LMS. See the hosting section in the project README.
+The SCORM packaging command rewrites root-relative course asset paths to package-relative paths without changing the ordinary static build. See the hosting section in the project README.

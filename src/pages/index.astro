@@ -3,6 +3,7 @@ import "../styles/winflo.css";
 import CourseProgress from "../components/CourseProgress.astro";
 import CourseCarousel from "../components/CourseCarousel.astro";
 import PracticeQuiz from "../components/PracticeQuiz.astro";
+import NeedsMatch from "../components/NeedsMatch.astro";
 import ResponsiveTable from "../components/ResponsiveTable.astro";
 import SectionHeading from "../components/SectionHeading.astro";
 import { courseData } from "../data/course";
@@ -112,7 +113,7 @@ import CourseLayout from "../layouts/CourseLayout.astro";
               <div><h3>{card.title}</h3><p>{card.benefit}</p></div>
             </article>)}
           </div>
-          <h3 class="winflo-subheading">Product details to remember</h3>
+          <h3 class="winflo-subheading">Product Details to Remember</h3>
           <ResponsiveTable id="winflo-specifications" label="Nike Winflo 12 product specifications" tone="dark" columns={[{ key: "detail", label: "Detail" }, { key: "specification", label: "Specification" }]} rows={courseData.updates.specifications} />
           <div class="winflo-outline-callout">
             <h3>Keep it Customer-friendly</h3>
@@ -147,7 +148,7 @@ import CourseLayout from "../layouts/CourseLayout.astro";
             <div><h4>Helpful response</h4><blockquote>“{courseData.scenario.experienced.response}”</blockquote></div>
           </div>
           <h3 class="winflo-subheading">Match Customer needs to benefits</h3>
-          <CourseCarousel id="needs-carousel" label="Customer needs and benefits" items={courseData.scenario.needs} tone="dark" />
+          <NeedsMatch id="needs-match" pairs={courseData.scenario.needs} />
         </div>
       </section>
 
