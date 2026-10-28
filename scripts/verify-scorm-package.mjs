@@ -91,7 +91,7 @@ try {
     await page.locator("#lesson-2").evaluate((element) => element.scrollIntoView({ block: "center", behavior: "instant" }));
     await page.waitForTimeout(1000);
     const partial = await lmsState(page);
-    assert(partial.values["cmi.core.lesson_status"] === "incomplete" && partial.values["cmi.suspend_data"].includes("nike-winflo-12:v1"), "Partial progress was not saved as incomplete");
+    assert(partial.values["cmi.core.lesson_status"] === "incomplete" && partial.values["cmi.suspend_data"].includes("nike-winflo-12:v3"), "Partial progress was not saved as incomplete");
     await page.evaluate(() => { window.dispatchEvent(new Event("pagehide")); window.dispatchEvent(new Event("pagehide")); });
     assert((await lmsState(page)).calls.filter((call) => call.name === "LMSFinish").length === 1, "LMSFinish was not guarded on exit");
     await page.close();
@@ -110,6 +110,7 @@ try {
       return Boolean(target && target.dataset.completionId === milestone.id && childrenValid && (milestone.type !== "watch" || target instanceof HTMLVideoElement));
     }), required);
     assert(registration.every(Boolean), "A required milestone lacks a valid target or exploration child");
+    assert((await page.locator("#recap h2").textContent()) === "Course Recap: Ready to Recommend", "Course recap heading is missing");
     for (const milestone of required.filter((item) => item.type === "view" && item.id !== "recap")) {
       await page.locator(`#${milestone.targetId}`).evaluate((element) => element.scrollIntoView({ block: "center", behavior: "instant" }));
       await page.waitForTimeout(960);
@@ -121,12 +122,16 @@ try {
     }
     await page.locator('#needs-match [data-match-id="soft"] select').selectOption("heel");
     await page.locator("#needs-match [data-match-submit]").click();
-    for (let index = 1; index <= 3; index += 1) {
+    for (let index = 1; index <= 2; index += 1) {
       if (index > 1) await page.locator("[data-practice-next]").click();
       await page.locator(`#practice-${index} input[type="radio"]`).first().check();
       await page.locator(`#practice-${index} [type="submit"]`).click();
     }
     assert((await lmsState(page)).values["cmi.core.lesson_status"] === "incomplete", "LMS completed before the final required milestone");
+    await page.locator("[data-practice-next]").click();
+    await page.locator('#practice-3 input[type="radio"]').first().check();
+    await page.locator('#practice-3 [type="submit"]').click();
+    assert((await lmsState(page)).values["cmi.core.lesson_status"] === "incomplete", "LMS completed before the recap was viewed");
     await page.locator("#recap").evaluate((element) => element.scrollIntoView({ block: "center", behavior: "instant" }));
     await page.waitForTimeout(1000);
     const finished = await lmsState(page);

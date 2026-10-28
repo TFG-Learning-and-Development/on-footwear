@@ -2,14 +2,15 @@
 interface Props {
   title: string;
   intro?: string;
+  introEmphasis?: string;
   light?: boolean;
   align?: "left" | "center";
 }
 
-const { title, intro, light = false, align = "center" } = Astro.props as Props;
+const { title, intro, introEmphasis, light = false, align = "center" } = Astro.props as Props;
 ---
 
 <header class:list={["section-heading", light && "section-heading--light", align === "left" && "section-heading--left", !intro && "section-heading--title-only"]}>
   <h2>{title}</h2>
-  {intro && <p class="section-intro">{intro}</p>}
+  {intro && <p class="section-intro">{introEmphasis && <><strong>{introEmphasis}</strong><br /></>}{intro}</p>}
 </header>

@@ -11,30 +11,26 @@ export const courseData = {
     { id: "lesson-3", label: "Shoe technology" },
     { id: "lesson-4", label: "Customer fit" },
     { id: "lesson-5", label: "What’s new" },
-    { id: "lesson-6", label: "Key selling message" },
-    { id: "lesson-7", label: "Customer scenario" },
-    { id: "lesson-8", label: "Practice knowledge check" },
+    { id: "lesson-6", label: "Customer scenario" },
+    { id: "lesson-7", label: "Practice knowledge check" },
   ],
   hero: {
     title: "Welcome to Nike Winflo 12",
     paragraphs: [
-      "Every Customer is looking for something different. Some want a fast shoe for race day, while others want comfort for easy runs, walks and everyday movement.",
-      "The Nike Winflo 12 is a men’s road-running shoe made for Customers who want soft cushioning, a balanced feel underfoot and a comfortable fit. In this course, you will learn who the shoe is best for, how to explain its benefits simply and how to recommend it with confidence.",
+      "The Nike Winflo 12 is a men’s road-running shoe for Customers who want comfort for easy runs and walks. Learn who it suits, how to explain its main benefits and how to recommend it with confidence.",
     ],
   },
   customerMoment: {
     quote: "I am looking for a comfortable shoe for my easy runs and daily walks. I do not need a race shoe. I just want cushioning that feels good.",
-    clue: "This is a good clue that the Nike Winflo 12 may be the right shoe.",
-    explanation: "This Customer is not looking for speed or a race-day shoe. They want something comfortable for everyday runs and walks. The Nike Winflo 12 is a good option because it offers soft cushioning, a stable feel and a comfortable fit.",
   },
-  journey: "You will first get to know this men’s road-running shoe and its main benefits. Then you will learn who it is best for, what is new and how to recommend it during a Customer conversation. Let’s get started.",
   basics: {
-    intro: "Let’s start with the basics. As you work through this lesson, think about the Customer who wants one comfortable shoe for everyday runs and walks.",
+    intro: "What does a balanced feel mean to the Customer? As you explore the product basics, think about how you would explain it in everyday language.",
     description: "The Nike Winflo 12 is made for Customers who want comfort during easy runs, walks and everyday activities. It has soft cushioning, a broad platform that helps the foot feel balanced and secure, and a comfortable fit. Customers may describe this need by saying they want a shoe that feels steady, supportive or less wobbly underfoot.",
     phrase: "The Nike Winflo 12 gives you soft cushioning, a balanced feel underfoot and a comfortable fit for your everyday runs and walks.",
   },
   technology: {
-    intro: "Now let’s look at the features inside the shoe. As you explore each one, ask yourself: How does this help the Customer? Keep your explanation simple. Tell the Customer what the feature does, how it helps and why it matters to them.",
+    introEmphasis: "From feature to Customer benefit",
+    intro: "See what each feature does, how it helps the Customer and how you can explain it simply.",
     features: [
       { title: "Cushlon 3.0 foam", image: "/assets/winflo-upper.webp", imageAlt: "Close view of the Nike Winflo 12 upper and cushioned sole", fields: [
         { label: "What it means", text: "Soft foam under the foot." }, { label: "Customer benefit", text: "Helps the Customer feel cushioned and comfortable." }, { label: "Say it like this", text: "The soft cushioning helps keep you comfortable during everyday runs." },
@@ -58,37 +54,29 @@ export const courseData = {
     tip: "You do not need to explain every feature. Ask what the Customer needs, then focus on the one or two benefits that matter most to them.",
   },
   fit: {
-    intro: "Start with the Customer, not the shoe. Ask how they plan to use it, then decide whether the Winflo 12 matches their needs. It is a good option when comfort matters most for everyday runs, walking or general use.",
+    intro: "Ask how the Customer plans to use the shoe, then use the examples below to check whether it is a good match.",
     examples: [
-      { title: "Easy, everyday road runs", image: "/assets/winflo-top.webp", imageAlt: "Top view of a pair of Nike Winflo 12 running shoes", fields: [{ label: "Why the Winflo 12 may fit", text: "Soft cushioning helps the Customer feel comfortable on everyday runs." }, { label: "Simple recommendation cue", text: "Recommend it when comfort is the main goal." }] },
-      { title: "Long, relaxed runs", image: "/assets/winflo-side.webp", imageAlt: "Side profile of the cushioned Nike Winflo 12", fields: [{ label: "Why the Winflo 12 may fit", text: "The cushioning and stable feel work well for a relaxed pace." }, { label: "Simple recommendation cue", text: "Recommend it for a comfortable, easy pace." }] },
-      { title: "A first running shoe", image: "/assets/winflo-pair.webp", imageAlt: "Pair of Nike Winflo 12 road-running shoes", fields: [{ label: "Why the Winflo 12 may fit", text: "It is a dependable daily trainer with cushioning and support." }, { label: "Simple recommendation cue", text: "Recommend it when the Customer wants a dependable daily trainer." }] },
-      { title: "Walking or all-day comfort", image: "/assets/winflo-upper.webp", imageAlt: "Close view of the Nike Winflo 12 cushioned upper", fields: [{ label: "Why the Winflo 12 may fit", text: "The cushioning supports walking and time spent on your feet." }, { label: "Simple recommendation cue", text: "Recommend it when comfort matters across the day." }] },
-      { title: "General gym use", image: "/assets/winflo-air.webp", imageAlt: "Nike Winflo 12 sole and heel detail", fields: [{ label: "Why the Winflo 12 may fit", text: "The shoe can support general gym use and light treadmill running." }, { label: "Simple recommendation cue", text: "Recommend it for general use, not speed-focused sessions." }] },
+      { title: "Easy, everyday or relaxed road runs", image: "/assets/winflo-top.webp", imageAlt: "Top view of a pair of Nike Winflo 12 running shoes", fields: [{ label: "Why the Winflo 12 may fit", text: "Soft cushioning helps the Customer feel comfortable on everyday runs." }] },
+      { title: "A first running shoe", image: "/assets/winflo-pair.webp", imageAlt: "Pair of Nike Winflo 12 road-running shoes", fields: [{ label: "Why the Winflo 12 may fit", text: "It is a dependable daily trainer with cushioning and support." }] },
+      { title: "Walking or all-day comfort", image: "/assets/winflo-upper.webp", imageAlt: "Close view of the Nike Winflo 12 cushioned upper", fields: [{ label: "Why the Winflo 12 may fit", text: "The cushioning supports walking and time spent on your feet." }] },
+      { title: "General gym use", image: "/assets/winflo-air.webp", imageAlt: "Nike Winflo 12 sole and heel detail", fields: [{ label: "Why the Winflo 12 may fit", text: "The shoe can support general gym use and light treadmill running." }] },
     ],
     unsuitable: ["Fast intervals or speed sessions", "Tempo runs where the Customer wants a light, quick feel", "Race day performance", "A Customer who prioritises a lightweight, agile shoe"],
-    honest: "If the Customer wants speed or a race-day shoe, be honest that the Winflo 12 is made for comfortable everyday running. Then help them find a lighter performance shoe that better suits their goal.",
+    alternative: {
+      heading: "If the Customer wants similar features in another shoe",
+      guidance: "Ask what they want to keep cushioning, room, breathability or a steady feel and what they want to change. Compare suitable options and encourage them to try the shoes on.",
+    },
   },
   updates: {
-    intro: "A Customer who knows the Winflo 11 may ask what has changed. Use these three updates to explain what is new in a simple way.",
+    intro: "You have seen how the features help the Customer. If they already know the Winflo 11, use these three updates to explain what has changed in the Winflo 12.",
     cards: [
       { title: "Increased Cushlon 3.0 foam stack height", benefit: "More foam underfoot for extra cushioning.", image: "/assets/winflo-side.webp", imageAlt: "Winflo 12 side view showing the Cushlon midsole" },
       { title: "Accommodating fit", benefit: "More room for a comfortable fit.", image: "/assets/winflo-upper.webp", imageAlt: "Winflo 12 upper and lacing detail" },
       { title: "Open-hole mesh upper", benefit: "More airflow through the top of the shoe.", image: "/assets/winflo-air.webp", imageAlt: "Winflo 12 mesh and heel detail" },
     ],
     specifications: [
-      { detail: "Product type", specification: "Men’s road-running shoe" }, { detail: "Style code", specification: "HV9272" },
+      { detail: "Product type", specification: "Road-running shoe" }, { detail: "Style code", specification: "HV9272" },
       { detail: "Weight", specification: "Approximately 322 g / 11.37 oz in a men’s US size 10" }, { detail: "Heel-to-toe drop", specification: "10 mm" },
-    ],
-    tip: "Only share the weight and heel-to-toe drop if the Customer asks. Most of the time, focus on comfort, cushioning, fit and how they plan to use the shoe.",
-  },
-  amer: {
-    intro: "You now know what the shoe offers and who it is best for. Next, use A-M-E-R to guide the conversation. Ask a question, listen to the Customer and recommend the shoe based on what they tell you.",
-    steps: [
-      { name: "Ask", description: "Ask how the Customer plans to use the shoe.", example: "What type of running or activity will you use the shoe for?" },
-      { name: "Match", description: "Link the Customer’s need to the right feature.", example: "You said comfort matters most, so I would look at the Cushlon 3.0 cushioning." },
-      { name: "Explain", description: "Explain how the feature helps the Customer.", example: "It gives you a soft, cushioned feel for everyday runs." },
-      { name: "Recommend", description: "Recommend the shoe and explain why it matches their needs.", example: "Based on what you have told me, I recommend trying the Nike Winflo 12." },
     ],
   },
   scenario: {
@@ -134,18 +122,7 @@ export const courseData = {
     ],
   },
   recap: {
-    intro: "You have reached the end of the course. You can now identify the right Customer, explain the benefits that matter most and use A-M-E-R to recommend the Nike Winflo 12 with confidence.",
-    remember: [
-      "It is a men’s road-running shoe designed for comfortable everyday use.",
-      "Cushlon 3.0 foam and the Nike Air unit provide soft cushioning.",
-      "The roomy fit and breathable upper support comfort.",
-      "It is best suited to easy runs, relaxed runs, walking and everyday use.",
-      "It is not the first choice when the Customer’s priority is speed or racing.",
-      "Use A-M-E-R: Ask, Match, Explain and Recommend.",
-    ],
-    alternatives: "Ask what they want to keep—cushioning, room, breathability or a steady feel—and what they want to change. Then compare suitable options, encourage them to try the shoes on and recommend the one that best matches their use and fit preference.",
-    closingLine: "Based on what you have told me, I recommend trying the Nike Winflo 12 because it gives you the cushioning and everyday comfort you are looking for.",
-    closing: "When you understand what the Customer needs, it becomes easier to explain the right benefit and make a helpful recommendation.",
+    intro: "Start with the Customer’s needs. Recommend the Nike Winflo 12 for comfortable everyday runs and walks, and suggest a different shoe when speed or race-day performance is the priority. On your next shift, practise an A-M-E-R conversation with a colleague about the Nike Winflo 12, focusing on the benefit that matters most to the Customer.",
   },
   footer: { text: "Return to People Connect to continue" },
 } as const;

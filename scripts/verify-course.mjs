@@ -146,7 +146,7 @@ try {
 
       fail(!response?.ok(), `${label} returned HTTP ${response?.status() ?? "unknown"}`);
       fail((await page.title()) !== "Content", `${label} metadata title is incorrect`);
-      fail((await page.locator("[data-nav-section]").count()) !== 8, `${label} section navigation is incomplete`);
+      fail((await page.locator("[data-nav-section]").count()) !== 7, `${label} section navigation is incomplete`);
       fail((await page.locator('.eyebrow, .section-eyebrow, .qc-type--eyebrow').count()) !== 0, `${label} renders a learner-facing eyebrow label`);
       fail((await page.locator(".skip-link").count()) !== 1, `${label} skip link is missing`);
       fail((await page.locator(".footer-inner > p").textContent()) !== "Return to People Connect to continue", `${label} footer guidance text is incorrect`);
@@ -164,7 +164,7 @@ try {
       })), `${label} footer does not use the configurable course accent`);
       fail(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior !== "auto"), `${label} reduced-motion styles are not active`);
       fail(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1), `${label} has horizontal overflow`);
-      fail(await page.evaluate(() => Object.keys(localStorage).some((key) => key !== "astro-course-progress:nike-winflo-12:v1") || Object.keys(sessionStorage).length > 0), `${label} writes unexpected browser storage`);
+      fail(await page.evaluate(() => Object.keys(localStorage).some((key) => key !== "astro-course-progress:nike-winflo-12:v3") || Object.keys(sessionStorage).length > 0), `${label} writes unexpected browser storage`);
 
       const courseTypography = await page.evaluate(() => {
         const body = getComputedStyle(document.body);
@@ -276,7 +276,7 @@ try {
       const toggle = page.locator(".lessons-toggle");
       const lessonsPanel = page.locator(".course-links");
       fail(await lessonsPanel.isVisible() || (await toggle.getAttribute("aria-expanded")) !== "false", `${label} Lessons is not initially closed`);
-      fail((await page.locator(".course-links a").count()) !== 8 || (await page.locator(".lessons-toggle").count()) !== 1, `${label} does not have exactly one eight-lesson menu`);
+      fail((await page.locator(".course-links a").count()) !== 7 || (await page.locator(".lessons-toggle").count()) !== 1, `${label} does not have exactly one seven-lesson menu`);
       await checkFocus(page, ".lessons-toggle", `${label} Lessons control`);
       await toggle.press("Enter");
       fail((await toggle.getAttribute("aria-expanded")) !== "true" || !(await lessonsPanel.isVisible()), `${label} Lessons did not open from the keyboard`);
@@ -297,8 +297,8 @@ try {
       await page.evaluate(() => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
       fail((await toggle.getAttribute("aria-expanded")) !== "false", `${label} Lessons did not dismiss on outside click`);
 
-      const expectedLessons = ["Welcome", "Product basics", "Shoe technology", "Customer fit", "What’s new", "Key selling message", "Customer scenario", "Practice knowledge check"];
-      const lessonNumbers = viewport.width === 1366 ? [1, 2, 3, 4, 5, 6, 7, 8] : [2];
+      const expectedLessons = ["Welcome", "Product basics", "Shoe technology", "Customer fit", "What’s new", "Customer scenario", "Practice knowledge check"];
+      const lessonNumbers = viewport.width === 1366 ? [1, 2, 3, 4, 5, 6, 7] : [2];
       for (const number of lessonNumbers) {
         await toggle.click();
         const lessonLink = lessonsPanel.locator(`a[href="#lesson-${number}"]`);
@@ -333,7 +333,7 @@ try {
       await firstOption.check();
       await page.locator("#practice-1 [type='submit']").click();
       fail(!(await page.locator("#practice-1 [data-practice-feedback]").textContent()).includes("Correct."), `${label} practice answer feedback is missing`);
-      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}").completed?.includes("practice-1"))), `${label} practice attempt did not emit completion`);
+      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v3") || "{}").completed?.includes("practice-1"))), `${label} practice attempt did not emit completion`);
       await page.locator("[data-practice-next]").click();
       fail((await page.locator("[data-practice-count]").textContent()) !== "Question 2 of 3", `${label} practice did not advance`);
       await page.locator("[data-practice-prev]").click();
@@ -344,14 +344,14 @@ try {
       await checkFocus(page, "#needs-match select", `${label} matching response selector`);
       await matching.locator("[data-match-submit]").press("Enter");
       fail(!(await matching.locator("[data-match-feedback]").textContent()).includes("Choose at least one"), `${label} blank matching feedback is missing`);
-      fail((await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}").completed?.includes("needs-match"))), `${label} blank matching submission counted as an attempt`);
+      fail((await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v3") || "{}").completed?.includes("needs-match"))), `${label} blank matching submission counted as an attempt`);
       await matching.locator('[data-match-id="soft"] select').selectOption("heel");
       await matching.locator("[data-match-submit]").click();
       fail((await matching.locator('[data-match-id="soft"]').getAttribute("data-result")) !== "incorrect", `${label} incorrect matching feedback is missing`);
-      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}").completed?.includes("needs-match"))), `${label} genuine matching attempt did not complete the milestone`);
+      fail(!(await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v3") || "{}").completed?.includes("needs-match"))), `${label} genuine matching attempt did not complete the milestone`);
 
       if (viewport.width === 1440) {
-        for (const [carouselId, total] of [["technology-carousel", 6], ["fit-carousel", 5]]) {
+        for (const [carouselId, total] of [["technology-carousel", 6], ["fit-carousel", 4]]) {
           const carousel = page.locator(`#${carouselId}`);
           for (let item = 2; item <= total; item += 1) {
             await carousel.locator("[data-carousel-next]").click();
@@ -379,7 +379,7 @@ try {
         await page.locator("#practice-3 input[value='2']").check();
         await page.locator("#practice-3 [type='submit']").click();
         fail(!(await page.locator("#practice-3 [data-practice-feedback]").textContent()).includes("Correct."), "question 3 correct feedback is missing");
-        const courseState = await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v1") || "{}"));
+        const courseState = await page.evaluate(() => JSON.parse(localStorage.getItem("astro-course-progress:nike-winflo-12:v3") || "{}"));
         for (const activityId of ["technology-carousel", "fit-carousel", "needs-match", "practice-1", "practice-2", "practice-3"]) {
           fail(!courseState.completed?.includes(activityId), `${activityId} did not complete in course-specific storage`);
         }
@@ -389,9 +389,9 @@ try {
         await restoredPage.close();
       }
 
-      await page.locator("#lesson-8").evaluate((element) => element.scrollIntoView({ block: "start" }));
+      await page.locator("#lesson-7").evaluate((element) => element.scrollIntoView({ block: "start" }));
       await page.waitForTimeout(100);
-      fail((await page.locator('.course-links a[aria-current="location"]').getAttribute("href")) !== "#lesson-8", `${label} final section did not become the active navigation item`);
+      fail((await page.locator('.course-links a[aria-current="location"]').getAttribute("href")) !== "#lesson-7", `${label} final section did not become the active navigation item`);
 
       const footerLink = page.locator(".footer-inner a");
       await checkFocus(page, ".footer-inner a", `${label} footer link`);
