@@ -1,0 +1,38 @@
+.learning-journey { position: relative; display: flex; flex-direction: column; gap: 1rem; max-width: 65rem; margin: var(--course-space-intro-interaction) auto 0; padding: 0; list-style: none; }
+.learning-journey::before { content: ""; position: absolute; top: 2rem; bottom: 2rem; left: calc(50% - 1px); width: 2px; background: #b8c1c7; }
+.learning-journey li { position: relative; width: calc(50% - 2.25rem); margin: 0; }
+.learning-journey li:nth-child(even) { align-self: flex-end; }
+.learning-journey li::before { content: ""; position: absolute; z-index: 1; top: 2.3rem; right: -2.9rem; width: 1.25rem; height: 1.25rem; border: 3px solid #fff; border-radius: 50%; background: #aeb8be; box-shadow: 0 0 0 2px #aeb8be; }
+.learning-journey li:nth-child(even)::before { right: auto; left: -2.9rem; }
+.learning-journey li[data-state="current"]::before { background: var(--course-accent); box-shadow: 0 0 0 2px var(--course-accent); }
+.learning-journey li[data-state="completed"]::before { background: #000; box-shadow: 0 0 0 2px #000; }
+.learning-journey__card { display: flex; min-height: 8rem; gap: 1rem; padding: 1.5rem; border: 2px solid #cdd4da; border-radius: 1rem; color: #000; background: #fff; box-shadow: 0 .3rem .9rem rgb(0 0 0 / 6%); transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease; }
+.learning-journey li[data-state="current"] .learning-journey__card { border-color: var(--course-accent); background: color-mix(in srgb, var(--course-accent) 10%, #fff); }
+.learning-journey li[data-state="completed"] .learning-journey__card { border-color: #939da3; background: #f6f8f9; }
+.learning-journey li .learning-journey__card:hover { border-color: var(--course-accent); background: var(--course-accent); box-shadow: 0 .5rem 1.2rem rgb(0 0 0 / 13%); transform: translateY(-2px); }
+.learning-journey__icon { display: grid; flex: 0 0 2.8rem; width: 2.8rem; height: 2.8rem; place-items: center; border-radius: .7rem; color: #000; background: #e1e5e7; }
+.learning-journey li[data-state="current"] .learning-journey__icon { background: var(--course-accent); }
+.learning-journey li[data-state="completed"] .learning-journey__icon { color: #fff; background: #000; }
+.learning-journey li .learning-journey__card:hover .learning-journey__icon { color: #000; background: rgb(255 255 255 / 65%); }
+.learning-journey__icon svg { width: 1.5rem; height: 1.5rem; }
+.learning-journey__body { display: grid; min-width: 0; gap: .25rem; }
+.learning-journey__number, .learning-journey__status { font-size: var(--course-type-compact-size); line-height: var(--course-type-compact-line-height); }
+.learning-journey__number { font-weight: 700; }
+.learning-journey__body strong { font-size: var(--course-type-heading-sm-size); line-height: var(--course-type-heading-sm-line-height); }
+.learning-journey__description { font-size: var(--course-type-ui-size); line-height: var(--course-type-ui-line-height); }
+.learning-journey__status { display: inline-flex; align-items: center; gap: .35rem; margin-top: .35rem; font-weight: 700; }
+.learning-journey__status svg { display: none; width: 1rem; height: 1rem; }
+.learning-journey li[data-state="completed"] .learning-journey__status .learning-journey__check,
+.learning-journey li[data-state="locked"] .learning-journey__status .learning-journey__lock { display: block; }
+.learning-journey li[data-state="locked"] .learning-journey__card { color: #435261; background: #f6f8f9; }
+.learning-journey li[data-state="locked"] .learning-journey__card:hover { border-color: #cdd4da; background: #f6f8f9; box-shadow: 0 .3rem .9rem rgb(0 0 0 / 6%); transform: none; }
+@media (max-width: 48rem) {
+  .learning-journey { gap: .75rem; margin-top: 2rem; }
+  .learning-journey::before { left: .7rem; }
+  .learning-journey li, .learning-journey li:nth-child(even) { align-self: auto; width: calc(100% - 2.25rem); margin-left: 2.25rem; }
+  .learning-journey li::before, .learning-journey li:nth-child(even)::before { right: auto; left: -2.15rem; width: .95rem; height: .95rem; top: 2.15rem; }
+  .learning-journey__card { min-height: 0; padding: 1rem; }
+  .learning-journey__icon { flex-basis: 2.4rem; width: 2.4rem; height: 2.4rem; }
+  .learning-journey__icon svg { width: 1.3rem; height: 1.3rem; }
+}
+@media (prefers-reduced-motion: reduce) { .learning-journey__card { transition: none; } }

@@ -8,6 +8,12 @@ Every new course must inherit this typography system through `CourseLayout.astro
 
 Mood boards and design boards may guide colour, imagery and composition, but they do not authorize typography changes. Do not alter shared typography to imitate a visual reference. Apply a heading-specific override only when explicitly requested, scope it to that heading, and leave shared tokens unchanged. Do not add eyebrow content or contextual labels above headings.
 
+### Hero heading spacing record
+
+On 3 November 2026, Lesson 1 placed its page title (`h1`) directly above its introduction heading (`h2`) with no measured gap. The shared reset supplies no heading margin, and the Lesson 1 hero lacked the local spacing rule already present in Lesson 0. Lesson 1 now sets a responsive bottom margin on its hero `h1` without changing shared type sizes or tokens.
+
+For every new course hero with adjacent `h1` and `h2` elements, define explicit local spacing and inspect the rendered result at mobile and desktop widths. `npm run verify` checks that the headings have at least 32px between their bounding boxes at its supported viewport widths.
+
 ## Defaults and configuration
 
 The shared implementation lives in `src/styles/typography.css`, and the approved course tokens live in `src/styles/course-typography.css`. Do not edit either file for an individual course unless the user explicitly requests a reviewed typography change.

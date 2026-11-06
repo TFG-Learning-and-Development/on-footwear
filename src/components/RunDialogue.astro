@@ -1,0 +1,29 @@
+---
+import { courseData } from "../data/course";
+import "../styles/run-dialogue.css";
+
+const dialogue = courseData.lesson6.dialogue;
+---
+
+<section class="run-dialogue" id="lesson-6-dialogue" data-completion-id="lesson-6-dialogue" aria-labelledby="lesson-6-dialogue-heading">
+  <div class="container">
+    <h2 id="lesson-6-dialogue-heading">{dialogue.title}</h2>
+    <div class="run-dialogue__layout">
+      <div class="run-dialogue__conversation">
+        <div class="run-dialogue__turn run-dialogue__turn--customer">
+          <p class="run-dialogue__speaker">Customer</p>
+          <blockquote>“{dialogue.customer}”</blockquote>
+        </div>
+        <div class="run-dialogue__turn run-dialogue__turn--athlete">
+          <p class="run-dialogue__speaker">Athlete</p>
+          <blockquote>“{dialogue.athlete}”</blockquote>
+        </div>
+      </div>
+      <div class="run-dialogue__visual">
+        <img src="/assets/footwear/Cloudrunner Max_3.jpeg" alt="Cloudrunner 3 Max running shoe shown from a three-quarter angle" width="1200" height="1200" loading="lazy" />
+        <p>Cloudrunner 3 Max</p>
+      </div>
+    </div>
+    <p class="run-dialogue__reflection">{dialogue.reflection}</p>
+  </div>
+</section>

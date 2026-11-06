@@ -4,10 +4,11 @@ import type { CompletionMilestone } from "../data/course-completion";
 interface Props {
   milestones: CompletionMilestone[];
   storageKey: string;
+  completionEnabled?: boolean;
 }
 
-const { milestones, storageKey } = Astro.props as Props;
-const config = { milestones, storageKey };
+const { milestones, storageKey, completionEnabled = true } = Astro.props as Props;
+const config = { milestones, storageKey, completionEnabled };
 ---
 
 <div class="course-progress" data-course-progress>
@@ -32,8 +33,13 @@ const config = { milestones, storageKey };
       <button class="course-progress__close" type="button" data-progress-close aria-label="Close activity progress">×</button>
     </div>
     <div class="course-progress__bar" role="progressbar" aria-label="Activity completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-progress-bar><span data-progress-bar-fill></span></div>
-    <div class="course-progress__list-group"><h2>Completed</h2><ul data-progress-completed></ul></div>
-    <div class="course-progress__list-group"><h2>Still to do</h2><ul data-progress-incomplete></ul></div>
+    <p class="course-progress__save-error" data-progress-save-error role="alert" hidden>Progress could not be saved. Keep this page open and try the activity again.</p>
+    <details class="course-progress__checklist" data-activity-checklist>
+      <summary>Activities to complete <span data-checklist-count aria-live="polite"></span></summary>
+      <p class="course-progress__checklist-guidance" data-checklist-guidance></p>
+      <ol class="course-progress__checklist-items" data-checklist-items></ol>
+    </details>
+    <div class="course-progress__lessons" data-progress-lessons></div>
   </aside>
 
   <script type="application/json" data-course-progress-config set:html={JSON.stringify(config)}></script>
@@ -41,10 +47,13 @@ const config = { milestones, storageKey };
 
 <script>
   import { ScormSession } from "../lib/scorm";
+  import { provideCourseState } from "../lib/course-state";
+  import { courseData } from "../data/course";
+  import { courseUrl } from "../lib/course-url";
 
   type RangePair = [number, number];
-  type PersistedState = { completed: string[]; watchRanges: Record<string, RangePair[]>; explored: Record<string, string[]> };
-  type Milestone = { id: string; label: string; type: "view" | "watch" | "submit" | "explore" | "complete" | "optional"; targetId: string; required: boolean; threshold?: number };
+  type PersistedState = { completed: string[]; watchRanges: Record<string, RangePair[]>; explored: Record<string, string[]>; ui: Record<string, unknown> };
+  type Milestone = { id: string; label: string; type: "view" | "watch" | "submit" | "explore" | "complete" | "optional"; targetId: string; path?: string; requiredItems?: string[]; required: boolean; threshold?: number };
 
   document.querySelectorAll<HTMLElement>("[data-course-progress]").forEach((root) => {
     if (root.dataset.ready === "true") return;
@@ -56,8 +65,10 @@ const config = { milestones, storageKey };
 
     const milestones = config.milestones as Milestone[];
     const requiredMilestones = milestones.filter((milestone) => milestone.required);
+    const completionEnabled = config.completionEnabled !== false;
+    const currentPath = document.querySelector<HTMLElement>("[data-course-path]")?.dataset.coursePath || location.pathname;
     const storageKey = String(config.storageKey || "astro-course-progress");
-    const defaultState = (): PersistedState => ({ completed: [], watchRanges: {}, explored: {} });
+    const defaultState = (): PersistedState => ({ completed: [], watchRanges: {}, explored: {}, ui: {} });
     const milestoneIds = new Set(milestones.map((milestone) => milestone.id));
     const validState = (value: unknown): PersistedState | null => {
       if (!value || typeof value !== "object") return null;
@@ -65,6 +76,19 @@ const config = { milestones, storageKey };
       if (!Array.isArray(candidate.completed) || !candidate.completed.every((id) => typeof id === "string" && milestoneIds.has(id))) return null;
       if (!candidate.watchRanges || typeof candidate.watchRanges !== "object" || Array.isArray(candidate.watchRanges)) return null;
       if (!candidate.explored || typeof candidate.explored !== "object" || Array.isArray(candidate.explored)) return null;
+      if (!candidate.ui || typeof candidate.ui !== "object" || Array.isArray(candidate.ui)) return null;
+      const uiJson = JSON.stringify(candidate.ui);
+      if (!uiJson || uiJson.length > 1800 || Object.keys(candidate.ui).length > 64) return null;
+      const validUiValue = (value: unknown, depth = 0): boolean => {
+        if (depth > 4) return false;
+        if (value === null || typeof value === "boolean") return true;
+        if (typeof value === "number") return Number.isSafeInteger(value) && value >= 0 && value < 1000;
+        if (typeof value === "string") return value.length <= 64;
+        if (Array.isArray(value)) return value.length <= 32 && value.every((item) => validUiValue(item, depth + 1));
+        if (typeof value === "object") return Object.entries(value).length <= 8 && Object.entries(value).every(([key, item]) => key.length <= 64 && validUiValue(item, depth + 1));
+        return false;
+      };
+      if (Object.values(candidate.ui).some((value) => !validUiValue(value))) return null;
       for (const [id, ranges] of Object.entries(candidate.watchRanges)) {
         if (milestones.find((item) => item.id === id)?.type !== "watch" || !Array.isArray(ranges) ||
           !ranges.every((range) => Array.isArray(range) && range.length === 2 && range.every((number) => typeof number === "number" && Number.isFinite(number) && number >= 0) && range[1] > range[0])) return null;
@@ -72,17 +96,17 @@ const config = { milestones, storageKey };
       for (const [id, items] of Object.entries(candidate.explored)) {
         const milestone = milestones.find((item) => item.id === id);
         if (milestone?.type !== "explore" || !Array.isArray(items)) return null;
-        const target = document.getElementById(milestone.targetId);
+        const target = milestone.path && milestone.path !== currentPath ? null : document.getElementById(milestone.targetId);
         let requiredItems: string[] = [];
-        try { requiredItems = JSON.parse(target?.dataset.requiredItems || "[]"); } catch { return null; }
+        try { requiredItems = target ? JSON.parse(target.dataset.requiredItems || "[]") : milestone.requiredItems || []; } catch { return null; }
         if (!Array.isArray(requiredItems) || requiredItems.length === 0 || !items.every((item) => typeof item === "string" && requiredItems.includes(item))) return null;
       }
       for (const id of candidate.completed) {
         const milestone = milestones.find((item) => item.id === id)!;
         if (milestone.type === "explore") {
-          const target = document.getElementById(milestone.targetId);
+          const target = milestone.path && milestone.path !== currentPath ? null : document.getElementById(milestone.targetId);
           let requiredItems: string[] = [];
-          try { requiredItems = JSON.parse(target?.dataset.requiredItems || "[]"); } catch { return null; }
+          try { requiredItems = target ? JSON.parse(target.dataset.requiredItems || "[]") : milestone.requiredItems || []; } catch { return null; }
           if (!requiredItems.length || !requiredItems.every((item) => candidate.explored[id]?.includes(item))) return null;
         }
         if (milestone.type === "watch" && !candidate.watchRanges[id]?.length) return null;
@@ -97,7 +121,7 @@ const config = { milestones, storageKey };
         const completed = compact.c.map(idAt);
         const watchRanges = Object.fromEntries(Object.entries(compact.w).map(([index, ranges]) => [idAt(Number(index)), ranges]));
         const explored = Object.fromEntries(Object.entries(compact.e).map(([index, items]) => [idAt(Number(index)), items]));
-        return validState({ completed, watchRanges, explored });
+        return validState({ completed, watchRanges, explored, ui: compact.u || {} });
       } catch { return null; }
     };
     const toSuspendData = () => {
@@ -107,14 +131,20 @@ const config = { milestones, storageKey };
         c: state.completed.map(indexOf),
         w: Object.fromEntries(Object.entries(state.watchRanges).map(([id, ranges]) => [indexOf(id), ranges])),
         e: Object.fromEntries(Object.entries(state.explored).map(([id, items]) => [indexOf(id), items])),
+        u: state.ui,
       });
     };
     const scorm = new ScormSession();
     const launch = scorm.launch();
     let state = defaultState();
+    let lmsStateValid = true;
     if (launch.mode === "lms" && launch.suspendData) {
-      state = fromSuspendData(launch.suspendData) || defaultState();
-      if (state.completed.length === 0 && launch.suspendData) console.error("[scorm] Invalid or version-mismatched cmi.suspend_data; starting this LMS attempt with empty tracker state.");
+      const restored = fromSuspendData(launch.suspendData);
+      if (restored) state = restored;
+      else {
+        lmsStateValid = false;
+        console.error("[scorm] Invalid or version-mismatched cmi.suspend_data; progress is read-only to preserve the existing LMS record.");
+      }
     } else if (launch.mode === "standalone") {
       try {
         const saved = window.localStorage.getItem(storageKey);
@@ -124,6 +154,7 @@ const config = { milestones, storageKey };
             completed: Array.isArray(parsed.completed) ? parsed.completed.filter((id: unknown) => typeof id === "string" && milestoneIds.has(id)) : [],
             watchRanges: Object.fromEntries(Object.entries(parsed.watchRanges || {}).filter(([id]) => milestones.some((item) => item.id === id && item.type === "watch"))),
             explored: Object.fromEntries(Object.entries(parsed.explored || {}).filter(([id]) => milestones.some((item) => item.id === id && item.type === "explore"))),
+            ui: parsed.ui || {},
           };
           state = validState(compatible) || defaultState();
         }
@@ -131,18 +162,77 @@ const config = { milestones, storageKey };
     }
 
     const completed = new Set(state.completed.filter((id) => milestones.some((milestone) => milestone.id === id)));
+    const lessonPaths = courseData.navigation.map((lesson) => lesson.href);
+    const lessonRequirements = lessonPaths.map((path) => requiredMilestones.filter((milestone) => milestone.path === path));
+    const unlockedPaths = () => {
+      const paths = [lessonPaths[0]];
+      for (let index = 1; index < lessonPaths.length; index += 1) {
+        if (!lessonRequirements[index - 1].length || !lessonRequirements[index - 1].every((milestone) => completed.has(milestone.id))) break;
+        paths.push(lessonPaths[index]);
+      }
+      return paths;
+    };
+    const internalNavigationKey = `${storageKey}:internal-navigation`;
+    const accessNoticeKey = `${storageKey}:access-notice`;
+    let internalNavigation = false;
+    try {
+      internalNavigation = sessionStorage.getItem(internalNavigationKey) === "1";
+      sessionStorage.removeItem(internalNavigationKey);
+    } catch { /* Access still follows restored progress. */ }
+    const accessible = unlockedPaths();
+    const knownRoute = lessonPaths.includes(currentPath);
+    let redirectPath = "";
+    if (knownRoute && !accessible.includes(currentPath)) {
+      const requestedNumber = lessonPaths.indexOf(currentPath);
+      const currentNumber = accessible.length - 1;
+      redirectPath = accessible[currentNumber];
+      try { sessionStorage.setItem(accessNoticeKey, `Lesson ${requestedNumber} is locked. Complete Lesson ${currentNumber} to 100% before continuing.`); } catch { /* Redirect still protects the lesson. */ }
+    } else if (knownRoute && launch.mode === "lms" && currentPath === "/" && !internalNavigation && launch.location !== "/" && accessible.includes(launch.location)) {
+      redirectPath = launch.location;
+    }
+    if (redirectPath) {
+      scorm.exit(lmsStateValid ? toSuspendData() : null, redirectPath);
+      window.location.replace(courseUrl(redirectPath));
+      return;
+    }
+    root.closest<HTMLElement>(".course-page")?.removeAttribute("data-access-pending");
+    try {
+      const notice = sessionStorage.getItem(accessNoticeKey);
+      const noticeNode = document.querySelector<HTMLElement>("[data-access-notice]");
+      if (notice && noticeNode) { noticeNode.textContent = notice; noticeNode.hidden = false; }
+      sessionStorage.removeItem(accessNoticeKey);
+    } catch { /* The course remains accessible without the redirect notice. */ }
+    document.addEventListener("click", (event) => {
+      const link = (event.target as Element).closest<HTMLAnchorElement>("a[href]");
+      if (!link) return;
+      const destination = new URL(link.href, location.href);
+      if (destination.origin !== location.origin || !lessonPaths.some((path) => courseUrl(path) === destination.pathname)) return;
+      try { sessionStorage.setItem(internalNavigationKey, "1"); } catch { /* Direct route access is still guarded. */ }
+    });
     const trigger = root.querySelector<HTMLButtonElement>("[data-progress-trigger]");
     const panel = root.querySelector<HTMLElement>("[data-progress-panel]");
     const closeButton = root.querySelector<HTMLButtonElement>("[data-progress-close]");
     const progressValue = root.querySelector<HTMLElement>("[data-progress-value]");
     const barFill = root.querySelector<HTMLElement>("[data-progress-bar-fill]");
     const bar = root.querySelector<HTMLElement>("[data-progress-bar]");
-    const completedList = root.querySelector<HTMLUListElement>("[data-progress-completed]");
-    const incompleteList = root.querySelector<HTMLUListElement>("[data-progress-incomplete]");
+    const lessonsNode = root.querySelector<HTMLElement>("[data-progress-lessons]");
+    const checklist = root.querySelector<HTMLDetailsElement>("[data-activity-checklist]");
+    const checklistCount = root.querySelector<HTMLElement>("[data-checklist-count]");
+    const checklistGuidance = root.querySelector<HTMLElement>("[data-checklist-guidance]");
+    const checklistItems = root.querySelector<HTMLOListElement>("[data-checklist-items]");
+    const saveError = root.querySelector<HTMLElement>("[data-progress-save-error]");
+    const showSaveError = (message: string) => {
+      if (!saveError) return;
+      saveError.textContent = message;
+      saveError.hidden = false;
+    };
+    if (launch.mode === "failed") showSaveError("LMS progress is unavailable. Reload the course from People Connect before continuing.");
+    if (launch.mode === "lms" && !lmsStateValid) showSaveError("Saved LMS progress could not be read. Reopen the course from People Connect before continuing.");
 
     const milestoneFor = (id: string) => milestones.find((milestone) => milestone.id === id);
-    const targetFor = (milestone: Milestone) => document.getElementById(milestone.targetId);
+    const targetFor = (milestone: Milestone) => milestone.path && milestone.path !== currentPath ? null : document.getElementById(milestone.targetId);
     milestones.forEach((milestone) => {
+      if (milestone.path && milestone.path !== currentPath) return;
       const target = targetFor(milestone);
       if (!target) console.error(`[course-progress] Unresolved target "${milestone.targetId}" for milestone "${milestone.id}".`);
       else if (target.dataset.completionId !== milestone.id) console.error(`[course-progress] Target "${milestone.targetId}" must declare data-completion-id="${milestone.id}".`);
@@ -164,10 +254,25 @@ const config = { milestones, storageKey };
       return Math.min(1, mergeRanges(state.watchRanges[id] || []).reduce((total, [start, end]) => total + Math.max(0, end - start), 0) / duration);
     };
 
-    const persist = () => {
+    const persist = (allowCompletion = false): boolean => {
       state.completed = Array.from(completed);
-      try { window.localStorage.setItem(storageKey, JSON.stringify(state)); } catch { /* Session progress still works. */ }
-      if (launch.mode === "lms") scorm.save(toSuspendData(), requiredMilestones.length > 0 && requiredMilestones.every((milestone) => completed.has(milestone.id)));
+      if (launch.mode === "standalone") {
+        try {
+          window.localStorage.setItem(storageKey, JSON.stringify(state));
+          if (saveError) saveError.hidden = true;
+          return true;
+        } catch {
+          showSaveError("Progress could not be saved in this browser. Keep this page open and try the activity again.");
+          return false;
+        }
+      }
+      if (launch.mode === "lms" && lmsStateValid) {
+        const saved = scorm.save(toSuspendData(), currentPath, allowCompletion && completionEnabled && requiredMilestones.length > 0 && requiredMilestones.every((milestone) => completed.has(milestone.id)));
+        if (saved && saveError) saveError.hidden = true;
+        if (!saved) showSaveError("Progress could not be saved to People Connect. Keep this page open and try the activity again.");
+        return saved;
+      }
+      return false;
     };
 
     const setPanelOpen = (isOpen: boolean, returnFocus = true) => {
@@ -184,25 +289,116 @@ const config = { milestones, storageKey };
       } else if (wasOpen && returnFocus) trigger?.focus();
     };
 
-    const renderList = (list: HTMLUListElement | null, entries: Milestone[], isComplete: boolean) => {
-      if (!list) return;
-      list.replaceChildren();
-      entries.forEach((milestone) => {
-        const item = document.createElement("li");
-        const link = document.createElement("a");
-        link.href = `#${encodeURIComponent(milestone.targetId)}`;
-        link.dataset.progressTarget = milestone.targetId;
-        link.dataset.complete = String(isComplete);
-        link.textContent = `${isComplete ? "✓" : "→"} ${milestone.label}`;
-        link.addEventListener("click", () => setPanelOpen(false, false));
-        item.append(link);
-        list.append(item);
+    const renderLessons = () => {
+      if (!lessonsNode) return;
+      lessonsNode.replaceChildren();
+      courseData.navigation.forEach((lesson, index) => {
+        const requirements = requiredMilestones.filter((milestone) => milestone.path === lesson.href);
+        const done = requirements.filter((milestone) => completed.has(milestone.id)).length;
+        const percent = requirements.length ? Math.round((done / requirements.length) * 100) : 0;
+        const locked = !unlockedPaths().includes(lesson.href);
+        const status = locked ? "Locked" : done === 0 ? "Not started" : done === requirements.length ? "Completed" : "In progress";
+        const item = document.createElement("section");
+        item.className = "course-progress__lesson";
+        item.dataset.progressLesson = lesson.id;
+        item.dataset.lessonState = status.toLowerCase().replace(" ", "-");
+        const head = document.createElement("div");
+        head.className = "course-progress__lesson-head";
+        const link = document.createElement(locked ? "span" : "a");
+        if (link instanceof HTMLAnchorElement) {
+          link.href = courseUrl(lesson.href);
+          link.addEventListener("click", () => setPanelOpen(false, false));
+        }
+        link.textContent = `Lesson ${index} · ${lesson.label}`;
+        if (locked) {
+          const lock = document.createElement("span");
+          lock.className = "course-progress__lock";
+          lock.setAttribute("aria-hidden", "true");
+          lock.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="11" x="5" y="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+          link.prepend(lock);
+        }
+        const number = document.createElement("strong");
+        number.textContent = `${percent}%`;
+        head.append(link, number);
+        const track = document.createElement("div");
+        track.className = "course-progress__lesson-bar";
+        track.setAttribute("role", "progressbar");
+        track.setAttribute("aria-label", `${lesson.label} progress`);
+        track.setAttribute("aria-valuemin", "0");
+        track.setAttribute("aria-valuemax", "100");
+        track.setAttribute("aria-valuenow", String(percent));
+        const fill = document.createElement("span");
+        fill.style.width = `${percent}%`;
+        track.append(fill);
+        const detail = document.createElement("p");
+        detail.textContent = locked ? `Locked · Complete Lesson ${index - 1} to 100% before continuing` : `${status} · ${done} of ${requirements.length} activities`;
+        item.append(head, track, detail);
+        lessonsNode.append(item);
       });
     };
 
+    const renderChecklist = () => {
+      const requirements = requiredMilestones.filter((milestone) => milestone.path === currentPath);
+      if (!checklist || !checklistItems || !checklistCount || !checklistGuidance) return;
+      checklist.hidden = requirements.length === 0;
+      if (!requirements.length) return;
+      const done = requirements.filter((milestone) => completed.has(milestone.id)).length;
+      const remaining = requirements.length - done;
+      const lessonNumber = lessonPaths.indexOf(currentPath);
+      checklistCount.textContent = `${done} of ${requirements.length} completed`;
+      checklistGuidance.textContent = remaining === 0
+        ? lessonNumber === lessonPaths.length - 1 ? "All course activities complete." : `Lesson complete. Lesson ${lessonNumber + 1} is unlocked.`
+        : lessonNumber === lessonPaths.length - 1
+          ? `${remaining} ${remaining === 1 ? "activity" : "activities"} left to complete the course.`
+          : `${remaining} ${remaining === 1 ? "activity" : "activities"} left to unlock Lesson ${lessonNumber + 1}.`;
+      checklistItems.replaceChildren();
+      requirements.forEach((milestone) => {
+        const complete = completed.has(milestone.id);
+        const item = document.createElement("li");
+        item.dataset.checklistActivity = milestone.id;
+        item.dataset.checklistState = complete ? "completed" : "outstanding";
+        const label = document.createElement(!complete && document.getElementById(milestone.targetId) ? "a" : "span");
+        label.textContent = milestone.label;
+        if (label instanceof HTMLAnchorElement) {
+          label.href = `${courseUrl(currentPath)}#${milestone.targetId}`;
+          label.dataset.checklistTarget = milestone.targetId;
+        }
+        const status = document.createElement("span");
+        status.className = "course-progress__checklist-status";
+        status.textContent = complete ? "✓ Completed" : "To do";
+        item.append(label, status);
+        checklistItems.append(item);
+      });
+    };
+
+    checklistItems?.addEventListener("click", (event) => {
+      const link = (event.target as Element).closest<HTMLAnchorElement>("a[data-checklist-target]");
+      if (!link || !checklistItems.contains(link)) return;
+      const target = document.getElementById(link.dataset.checklistTarget || "");
+      if (!target) return;
+      event.preventDefault();
+      if (target.id === "lesson-0-check" && target.hidden) target.closest<HTMLElement>("[data-assessment-panel]")?.querySelector<HTMLButtonElement>("[data-assessment-next]")?.click();
+      setPanelOpen(false, false);
+      window.requestAnimationFrame(() => {
+        const destination = target.querySelector<HTMLElement>("h2, h3, textarea, input") || target;
+        const hadTabIndex = destination.hasAttribute("tabindex");
+        if (!hadTabIndex) destination.tabIndex = -1;
+        destination.focus({ preventScroll: true });
+        if (!hadTabIndex) destination.addEventListener("blur", () => destination.removeAttribute("tabindex"), { once: true });
+        target.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+        target.dataset.checklistHighlight = "true";
+        window.setTimeout(() => { delete target.dataset.checklistHighlight; }, 2500);
+      });
+    });
+
+    const publishState = () => window.dispatchEvent(new CustomEvent("course-progress:state", {
+      detail: { completedIds: Array.from(completed), unlockedPaths: unlockedPaths(), milestones: milestones.map(({ id, path, required }) => ({ id, path, required })) },
+    }));
+    window.addEventListener("course-progress:request-state", publishState);
+
     const render = () => {
       const completeCount = requiredMilestones.filter((milestone) => completed.has(milestone.id)).length;
-      const percent = requiredMilestones.length === 0 ? 100 : Math.round((completeCount / requiredMilestones.length) * 100);
+      const percent = requiredMilestones.length === 0 ? 0 : Math.round((completeCount / requiredMilestones.length) * 100);
       const value = `${percent}% complete`;
       const percentNode = trigger?.querySelector("strong");
       if (percentNode) percentNode.textContent = `${percent}%`;
@@ -210,16 +406,33 @@ const config = { milestones, storageKey };
       if (progressValue) progressValue.textContent = value;
       if (barFill) barFill.style.width = `${percent}%`;
       bar?.setAttribute("aria-valuenow", String(percent));
-      renderList(completedList, requiredMilestones.filter((milestone) => completed.has(milestone.id)), true);
-      renderList(incompleteList, requiredMilestones.filter((milestone) => !completed.has(milestone.id)), false);
+      renderLessons();
+      renderChecklist();
+      publishState();
     };
 
     const markComplete = (id: string) => {
+      if (launch.mode === "failed" || (launch.mode === "lms" && !lmsStateValid)) return;
       if (completed.has(id)) return;
       completed.add(id);
-      persist();
+      if (!persist(true)) {
+        completed.delete(id);
+        state.completed = Array.from(completed);
+      }
       render();
     };
+
+    provideCourseState({
+      mode: launch.mode,
+      learnerId: launch.learnerId,
+      get: (key, fallback) => (state.ui[key] === undefined ? fallback : state.ui[key] as typeof fallback),
+      set: (key: string, value: unknown) => {
+        state.ui[key] = value;
+        persist();
+      },
+      explored: (activityId: string) => state.explored[activityId] || [],
+      completed: (activityId: string) => completed.has(activityId),
+    });
 
     window.addEventListener("course-progress:request-restore", ((event: CustomEvent<{ activityId: string; apply?: (itemIds: string[]) => void }>) => {
       const id = event.detail.activityId;
@@ -240,8 +453,8 @@ const config = { milestones, storageKey };
       const itemIds = new Set(state.explored[activityId] || []);
       itemIds.add(itemId);
       state.explored[activityId] = Array.from(itemIds);
-      if (requiredItems.length > 0 && requiredItems.every((id) => itemIds.has(id))) markComplete(activityId);
-      persist();
+      if (requiredItems.length > 0 && requiredItems.every((id) => itemIds.has(id)) && !completed.has(activityId)) markComplete(activityId);
+      else persist();
       window.dispatchEvent(new CustomEvent("course-progress:explore-state", { detail: { activityId, itemIds: state.explored[activityId] } }));
     }) as EventListener);
 
@@ -272,7 +485,12 @@ const config = { milestones, storageKey };
     if (import.meta.env.DEV || import.meta.env.PUBLIC_COURSE_VERIFY === "1") window.addEventListener("course-progress:test-reset", resetForTests);
 
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persist(); });
-    window.addEventListener("pagehide", () => scorm.exit(toSuspendData(), requiredMilestones.length > 0 && requiredMilestones.every((milestone) => completed.has(milestone.id))));
+    window.addEventListener("pagehide", () => scorm.exit(lmsStateValid ? toSuspendData() : null, currentPath));
+    window.addEventListener("pageshow", (event) => {
+      if (!event.persisted) return;
+      try { sessionStorage.setItem(internalNavigationKey, "1"); } catch { /* A reload still restores LMS state. */ }
+      window.location.reload();
+    });
 
     if ("IntersectionObserver" in window) {
       const viewTimers = new Map<string, number>();
@@ -329,7 +547,6 @@ const config = { milestones, storageKey };
     });
 
     render();
-    if (launch.mode === "lms" && requiredMilestones.length > 0 && requiredMilestones.every((milestone) => completed.has(milestone.id))) persist();
     window.setTimeout(() => {
       Object.entries(state.explored).forEach(([activityId, itemIds]) => window.dispatchEvent(new CustomEvent("course-progress:explore-state", { detail: { activityId, itemIds } })));
       completed.forEach((activityId) => window.dispatchEvent(new CustomEvent("course-progress:restore-complete", { detail: { activityId, complete: true } })));
@@ -352,6 +569,33 @@ const config = { milestones, storageKey };
   .course-progress__close:hover, .course-progress__close:focus-visible { background: var(--course-accent); color: var(--ink); outline: 2px solid var(--focus-on-light); outline-offset: 2px; }
   .course-progress__bar { height: 10px; margin: 20px 0 18px; overflow: hidden; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px #6d777d; }
   .course-progress__bar span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--course-accent); transition: width 0.2s ease; }
+  .course-progress__save-error { margin: 0 0 18px; color: #9d1b1b; font-size: var(--course-type-ui-size); line-height: 1.4; }
+  .course-progress__save-error[hidden] { display: none; }
+  .course-progress__checklist { margin: 0 0 18px; padding: 12px 0; border-top: 1px solid #dfe5ea; border-bottom: 1px solid #dfe5ea; }
+  .course-progress__checklist[hidden] { display: none; }
+  .course-progress__checklist summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; color: #071827; font-size: var(--course-type-ui-size); font-weight: 700; line-height: 1.35; cursor: pointer; }
+  .course-progress__checklist summary:focus-visible { outline: 2px solid var(--focus-on-light); outline-offset: 4px; }
+  .course-progress__checklist summary span { flex: 0 0 auto; color: #435261; font-weight: 400; }
+  .course-progress__checklist-guidance { margin: 12px 0 8px; color: #435261; font-size: var(--course-type-ui-size); line-height: 1.4; }
+  .course-progress__checklist-items { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  :global(.course-progress__checklist-items li) { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid #edf0f2; font-size: var(--course-type-ui-size); line-height: 1.35; }
+  :global(.course-progress__checklist-items a) { color: #006c91; text-decoration: underline; text-underline-offset: 2px; }
+  :global(.course-progress__checklist-items a:hover), :global(.course-progress__checklist-items a:focus-visible) { color: #004e6a; outline-color: var(--focus-on-light); }
+  :global(.course-progress__checklist-items li[data-checklist-state="completed"] > span:first-child) { color: #435261; }
+  :global(.course-progress__checklist-status) { flex: 0 0 auto; color: #435261; font-size: var(--course-type-compact-size); }
+  :global(.course-progress__checklist-items li[data-checklist-state="completed"] .course-progress__checklist-status) { color: #146b51; font-weight: 700; }
+  .course-progress__lessons { display: grid; gap: 14px; }
+  :global(.course-progress__lesson) { padding-top: 12px; border-top: 1px solid #dfe5ea; }
+  :global(.course-progress__lesson-head) { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  :global(.course-progress__lesson-head a) { color: #071827; font-size: var(--course-type-ui-size); font-weight: 700; line-height: 1.3; text-decoration: none; }
+  :global(.course-progress__lesson-head > span) { display: inline-flex; align-items: center; gap: .35rem; color: #435261; font-size: var(--course-type-ui-size); font-weight: 700; line-height: 1.3; }
+  :global(.course-progress__lock) { display: inline-flex; flex: 0 0 1rem; }
+  :global(.course-progress__lock svg) { width: 1rem; height: 1rem; }
+  :global(.course-progress__lesson-head a:hover), :global(.course-progress__lesson-head a:focus-visible) { color: var(--course-accent); text-decoration: underline; outline-color: var(--focus-on-light); }
+  :global(.course-progress__lesson-head strong) { flex: 0 0 auto; font-size: var(--course-type-ui-size); }
+  :global(.course-progress__lesson-bar) { height: 7px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: #e1e5e7; box-shadow: inset 0 0 0 1px #6d777d; }
+  :global(.course-progress__lesson-bar span) { display: block; height: 100%; border-radius: inherit; background: var(--course-accent); transition: width 0.2s ease; }
+  :global(.course-progress__lesson p) { margin: 5px 0 0; color: #435261; font-size: var(--course-type-ui-size); line-height: 1.3; }
   .course-progress__list-group + .course-progress__list-group { margin-top: 14px; }
   .course-progress__list-group h2 { margin: 0 0 5px; color: #071827; font-size: 16px; line-height: 1.15; }
   .course-progress__list-group ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
@@ -362,5 +606,5 @@ const config = { milestones, storageKey };
     .course-progress__trigger { min-height: 2.75rem; padding-inline: 0.6rem; }
     .course-progress__panel { right: 0; max-height: calc(100dvh - 5.75rem); }
   }
-  @media (prefers-reduced-motion: reduce) { .course-progress__bar span { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .course-progress__bar span, :global(.course-progress__lesson-bar span) { transition: none; } }
 </style>

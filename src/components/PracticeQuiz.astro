@@ -11,31 +11,31 @@ interface Props { questions: readonly Question[] }
 const { questions } = Astro.props as Props;
 ---
 
-<div class="winflo-practice" data-winflo-practice>
-  <div class="winflo-practice__questions">
+<div class="course-practice" data-course-practice>
+  <div class="course-practice__questions">
     {questions.map((question, index) => (
-      <article id={`practice-${index + 1}`} class="winflo-practice__question" data-completion-id={`practice-${index + 1}`} hidden={index !== 0}>
-        <div class="winflo-practice__prompt">
+      <article id={`practice-${index + 1}`} class="course-practice__question" data-completion-id={`practice-${index + 1}`} hidden={index !== 0}>
+        <div class="course-practice__prompt">
           <p>{question.scenario}</p>
           <h3>{question.prompt}</h3>
         </div>
-        <form class="winflo-practice__form" data-correct={question.correct} data-correct-feedback={question.feedback} data-incorrect-feedback={question.incorrect}>
+        <form class="course-practice__form" data-correct={question.correct} data-correct-feedback={question.feedback} data-incorrect-feedback={question.incorrect}>
           <fieldset>
             <legend class="sr-only">{question.prompt}</legend>
             {question.options.map((option, optionIndex) => (
-              <label class="winflo-practice__option">
+              <label class="course-practice__option">
                 <input type="radio" name={`question-${index + 1}`} value={optionIndex} />
                 <span><b>{String.fromCharCode(65 + optionIndex)}.</b> {option}</span>
               </label>
             ))}
           </fieldset>
-          <button class="winflo-practice__submit" type="submit">Submit answer</button>
-          <p class="winflo-practice__feedback" data-practice-feedback role="status" aria-live="polite" hidden></p>
+          <button class="course-practice__submit" type="submit">Submit answer</button>
+          <p class="course-practice__feedback" data-practice-feedback role="status" aria-live="polite" hidden></p>
         </form>
       </article>
     ))}
   </div>
-  <div class="winflo-practice__controls">
+  <div class="course-practice__controls">
     <span data-practice-count aria-live="polite">Question 1 of {questions.length}</span>
     <button type="button" data-practice-prev aria-label="Previous practice question" disabled><span aria-hidden="true">‹</span></button>
     <button type="button" data-practice-next aria-label="Next practice question"><span aria-hidden="true">›</span></button>
@@ -43,9 +43,9 @@ const { questions } = Astro.props as Props;
 </div>
 
 <script>
-  const practice = document.querySelector<HTMLElement>("[data-winflo-practice]");
+  const practice = document.querySelector<HTMLElement>("[data-course-practice]");
   if (practice) {
-    const questions = Array.from(practice.querySelectorAll<HTMLElement>(".winflo-practice__question"));
+    const questions = Array.from(practice.querySelectorAll<HTMLElement>(".course-practice__question"));
     const count = practice.querySelector<HTMLElement>("[data-practice-count]");
     const previous = practice.querySelector<HTMLButtonElement>("[data-practice-prev]");
     const next = practice.querySelector<HTMLButtonElement>("[data-practice-next]");

@@ -1,0 +1,122 @@
+---
+import { courseData } from "../data/course";
+import { completionSettings } from "../data/course-completion";
+import "../styles/run-framework.css";
+
+const run = courseData.lesson6.run;
+const storageKey = `${completionSettings.storageKey}:lesson-6:run-step`;
+---
+
+<section class="run-framework" id="lesson-6-run" data-completion-id="lesson-6-run" data-required-items={JSON.stringify(["run-r", "run-u", "run-n"])} aria-labelledby="lesson-6-run-heading" data-run-framework data-storage-key={storageKey}>
+  <div class="container">
+    <div class="run-framework__intro">
+      <h2 id="lesson-6-run-heading">{run.title}</h2>
+      <p>{run.intro}</p>
+      <p class="run-framework__guidance">Select each RUN step, including R, to complete this activity. <span data-run-explore-count role="status" aria-live="polite">0 of 3 steps explored</span></p>
+    </div>
+    <div class="run-framework__surface">
+      <div class="run-framework__tabs" role="tablist" aria-label="RUN recommendation steps">
+        {run.steps.map((step, index) => (
+          <button
+            type="button"
+            class="run-framework__tab"
+            id={`run-tab-${index}`}
+            role="tab"
+            aria-controls={`run-panel-${index}`}
+            aria-selected={index === 0 ? "true" : "false"}
+            tabindex={index === 0 ? 0 : -1}
+            data-run-tab={index}
+            data-run-item-id={`run-${step.letter.toLowerCase()}`}
+          >
+            <span class="run-framework__letter" aria-hidden="true">{step.letter}</span>
+            <span class="run-framework__tab-name">{step.title}</span>
+          </button>
+        ))}
+      </div>
+      <div class="run-framework__content">
+        {run.steps.map((step, index) => (
+          <div
+            class="run-framework__panel"
+            id={`run-panel-${index}`}
+            role="tabpanel"
+            aria-labelledby={`run-tab-${index}`}
+            tabindex="0"
+            hidden={index !== 0}
+            data-run-panel={index}
+          >
+            <span class="run-framework__panel-letter" aria-hidden="true">{step.letter}</span>
+            <div class="run-framework__panel-copy">
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </div>
+          </div>
+        ))}
+        <div class="run-framework__controls">
+          <button type="button" data-run-previous disabled aria-label="Previous RUN step">Previous</button>
+          <span class="run-framework__count" data-run-count aria-live="polite">Step 1 of 3</span>
+          <button type="button" data-run-next aria-label="Next RUN step">Next <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  courseStateReady.then((courseState) => document.querySelectorAll<HTMLElement>("[data-run-framework]").forEach((root) => {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-run-tab]"));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>("[data-run-panel]"));
+    const previous = root.querySelector<HTMLButtonElement>("[data-run-previous]");
+    const next = root.querySelector<HTMLButtonElement>("[data-run-next]");
+    const count = root.querySelector<HTMLElement>("[data-run-count]");
+    const exploredCount = root.querySelector<HTMLElement>("[data-run-explore-count]");
+    const updateExploredCount = (itemIds: string[]) => {
+      if (!exploredCount) return;
+      const visited = tabs.filter((tab) => itemIds.includes(tab.dataset.runItemId || "")).length;
+      exploredCount.textContent = `${visited} of ${tabs.length} steps explored${courseState.completed(root.id) ? " · Completed" : ""}`;
+    };
+    updateExploredCount(courseState.explored(root.id));
+    window.addEventListener("course-progress:explore-state", ((event: CustomEvent<{ activityId: string; itemIds: string[] }>) => {
+      if (event.detail.activityId === root.id) updateExploredCount(event.detail.itemIds);
+    }) as EventListener);
+    let active = 0;
+    const saved = courseState.get<number>("lesson-6-run-active", 0);
+    if (Number.isInteger(saved) && saved >= 0 && saved < tabs.length) active = saved;
+
+    const show = (index: number, focusTab = false, record = true) => {
+      active = index;
+      tabs.forEach((tab, position) => {
+        const selected = position === active;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        panels[position].hidden = !selected;
+      });
+      if (previous) previous.disabled = active === 0;
+      if (next) next.disabled = active === tabs.length - 1;
+      if (count) count.textContent = `Step ${active + 1} of ${tabs.length}`;
+      if (focusTab) tabs[active].focus();
+      if (record) {
+        courseState.set("lesson-6-run-active", active);
+        const itemId = tabs[active]?.dataset.runItemId;
+        if (itemId) window.dispatchEvent(new CustomEvent("course-progress:explore", { detail: { activityId: root.id, itemId } }));
+      }
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => show(index));
+      tab.addEventListener("keydown", (event) => {
+        let target = index;
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") target = (index + 1) % tabs.length;
+        else if (event.key === "ArrowLeft" || event.key === "ArrowUp") target = (index - 1 + tabs.length) % tabs.length;
+        else if (event.key === "Home") target = 0;
+        else if (event.key === "End") target = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        show(target, true);
+      });
+    });
+    previous?.addEventListener("click", () => show(Math.max(0, active - 1)));
+    next?.addEventListener("click", () => show(Math.min(tabs.length - 1, active + 1)));
+    show(active, false, false);
+  }));
+</script>

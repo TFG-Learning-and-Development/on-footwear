@@ -1,0 +1,184 @@
+---
+import { completionSettings } from "../data/course-completion";
+import CourseIcon from "./CourseIcon.astro";
+import "../styles/assessment-panel.css";
+
+type Scenario = { title: string; statement: string; instruction: string; options: readonly string[]; correctFeedback: string; incorrectFeedback: string };
+type Knowledge = { title: string; question: string; options: readonly string[]; correctFeedback: string; incorrectFeedback: string };
+interface Props {
+  scenario: Scenario;
+  knowledge: Knowledge;
+  scenarioId: string;
+  knowledgeId: string;
+  scenarioCorrectIndex: number;
+  knowledgeCorrectIndex: number;
+}
+const { scenario, knowledge, scenarioId, knowledgeId, scenarioCorrectIndex, knowledgeCorrectIndex } = Astro.props as Props;
+const config = {
+  scenarioId,
+  storageKey: `${completionSettings.storageKey}:assessment`,
+  scenarioCorrectIndex,
+  knowledgeCorrectIndex,
+  scenarioFeedback: { correct: scenario.correctFeedback, incorrect: scenario.incorrectFeedback },
+  knowledgeFeedback: { correct: knowledge.correctFeedback, incorrect: knowledge.incorrectFeedback },
+};
+---
+
+<section class="assessment-panel" id={scenarioId} data-completion-id={scenarioId} data-assessment-panel aria-label="Lesson 0 scenario assessment">
+  <div class="assessment-panel__slide" data-assessment-slide="0">
+    <h2 id={`${scenarioId}-heading`} tabindex="-1">{scenario.title}</h2>
+    <div class="assessment-panel__grid">
+      <div class="assessment-panel__question-column">
+        <div class="assessment-panel__question-card">
+          <span class="assessment-panel__question-icon" aria-hidden="true"><CourseIcon name="search" /></span>
+          <div class="assessment-panel__question-copy">
+            <p>{scenario.statement}</p>
+            <p><strong>{scenario.instruction}</strong></p>
+          </div>
+        </div>
+        <div class="assessment-panel__feedback-slot"><span class="assessment-panel__feedback-icon" aria-hidden="true"><CourseIcon name="check" /></span><p data-scenario-feedback role="status" aria-live="polite"></p></div>
+      </div>
+      <fieldset class="assessment-panel__answers" aria-labelledby={`${scenarioId}-heading`}>
+        <legend class="sr-only">{scenario.instruction}</legend>
+        {scenario.options.map((option, index) => (
+          <label class="assessment-panel__option">
+            <input type="radio" name="scenario-answer" value={index} />
+            <span>{option}</span>
+          </label>
+        ))}
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="assessment-panel__slide" id={knowledgeId} data-completion-id={knowledgeId} data-assessment-slide="1" hidden>
+    <h2 id={`${knowledgeId}-heading`} tabindex="-1">{knowledge.title}</h2>
+    <form data-knowledge-form>
+      <div class="assessment-panel__grid">
+        <div class="assessment-panel__question-column">
+          <div class="assessment-panel__question-card"><span class="assessment-panel__question-icon" aria-hidden="true"><CourseIcon name="search" /></span><div class="assessment-panel__question-copy"><p>{knowledge.question}</p></div></div>
+          <div class="assessment-panel__feedback-slot"><span class="assessment-panel__feedback-icon" aria-hidden="true"><CourseIcon name="check" /></span><p data-knowledge-feedback role="status" aria-live="polite"></p></div>
+        </div>
+        <fieldset class="assessment-panel__answers" aria-labelledby={`${knowledgeId}-heading`}>
+          <legend class="sr-only">{knowledge.question}</legend>
+          {knowledge.options.map((option, index) => (
+            <label class="assessment-panel__option">
+              <input type="radio" name="knowledge-answer" value={index} data-completion-option />
+              <span>{option}</span>
+            </label>
+          ))}
+        </fieldset>
+      </div>
+    </form>
+  </div>
+
+  <nav class="assessment-panel__navigation" aria-label="Assessment questions">
+    <span class="assessment-panel__counter" data-assessment-counter aria-live="polite">Question 1 of 2</span>
+    <button type="button" data-assessment-previous aria-label="Previous question" disabled><CourseIcon name="arrow-left" /></button>
+    <button type="button" data-assessment-next aria-label="Next question"><CourseIcon name="arrow-right" /></button>
+  </nav>
+  <script type="application/json" data-assessment-config set:html={JSON.stringify(config)}></script>
+</section>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  courseStateReady.then((courseState) => document.querySelectorAll<HTMLElement>("[data-assessment-panel]").forEach((panel) => {
+    const configNode = panel.querySelector<HTMLScriptElement>("[data-assessment-config]");
+    if (!configNode?.textContent) return;
+    const config = JSON.parse(configNode.textContent) as {
+      scenarioId: string; storageKey: string; scenarioCorrectIndex: number; knowledgeCorrectIndex: number;
+      scenarioFeedback: { correct: string; incorrect: string }; knowledgeFeedback: { correct: string; incorrect: string };
+    };
+    type Answer = { selected: number | null };
+    type State = { current: number; scenario: Answer; knowledge: Answer };
+    const emptyState = (): State => ({ current: 0, scenario: { selected: null }, knowledge: { selected: null } });
+    const slides = [...panel.querySelectorAll<HTMLElement>("[data-assessment-slide]")];
+    const scenarioInputs = [...panel.querySelectorAll<HTMLInputElement>('input[name="scenario-answer"]')];
+    const knowledgeInputs = [...panel.querySelectorAll<HTMLInputElement>('input[name="knowledge-answer"]')];
+    const scenarioFeedback = panel.querySelector<HTMLElement>("[data-scenario-feedback]");
+    const knowledgeFeedback = panel.querySelector<HTMLElement>("[data-knowledge-feedback]");
+    const knowledgeForm = panel.querySelector<HTMLFormElement>("[data-knowledge-form]");
+    const counter = panel.querySelector<HTMLElement>("[data-assessment-counter]");
+    const previous = panel.querySelector<HTMLButtonElement>("[data-assessment-previous]");
+    const next = panel.querySelector<HTMLButtonElement>("[data-assessment-next]");
+
+    const validAnswer = (value: unknown, count: number): number | null =>
+      Number.isInteger(value) && (value as number) >= 0 && (value as number) < count ? value as number : null;
+    const restore = (): State => {
+      try {
+        const saved = courseState.get<State | null>(config.scenarioId, null);
+        if (!saved || typeof saved !== "object") return emptyState();
+        const scenarioSelected = validAnswer(saved.scenario?.selected, scenarioInputs.length);
+        const knowledgeSelected = validAnswer(saved.knowledge?.selected, knowledgeInputs.length);
+        return {
+          current: saved.current === 1 ? 1 : 0,
+          scenario: { selected: scenarioSelected },
+          knowledge: { selected: knowledgeSelected },
+        };
+      } catch { return emptyState(); }
+    };
+    let state = restore();
+    const persist = () => courseState.set(config.scenarioId, state);
+    const showFeedback = (element: HTMLElement | null, selected: number | null, correctIndex: number, messages: { correct: string; incorrect: string }) => {
+      if (!element) return;
+      element.textContent = selected === null ? "" : selected === correctIndex ? messages.correct : messages.incorrect;
+      if (selected === null) {
+        delete element.dataset.result;
+        if (element.parentElement) delete element.parentElement.dataset.result;
+      } else {
+        const result = selected === correctIndex ? "correct" : "incorrect";
+        element.dataset.result = result;
+        if (element.parentElement) element.parentElement.dataset.result = result;
+      }
+    };
+    const render = () => {
+      slides.forEach((slide, index) => { slide.hidden = index !== state.current; });
+      slides.forEach((slide, index) => {
+        const selected = index === 0 ? state.scenario.selected : state.knowledge.selected;
+        const correctIndex = index === 0 ? config.scenarioCorrectIndex : config.knowledgeCorrectIndex;
+        if (selected === null) delete slide.dataset.result;
+        else slide.dataset.result = selected === correctIndex ? "correct" : "incorrect";
+      });
+      if (counter) counter.textContent = `Question ${state.current + 1} of 2`;
+      if (previous) previous.disabled = state.current === 0;
+      if (next) next.disabled = state.current === 1;
+      scenarioInputs.forEach((input, index) => { input.checked = state.scenario.selected === index; });
+      knowledgeInputs.forEach((input, index) => { input.checked = state.knowledge.selected === index; });
+      showFeedback(scenarioFeedback, state.scenario.selected, config.scenarioCorrectIndex, config.scenarioFeedback);
+      showFeedback(knowledgeFeedback, state.knowledge.selected, config.knowledgeCorrectIndex, config.knowledgeFeedback);
+    };
+    const navigate = (current: number) => {
+      state.current = current;
+      render();
+      persist();
+      slides[current]?.querySelector<HTMLElement>("h2")?.focus();
+    };
+    previous?.addEventListener("click", () => navigate(0));
+    next?.addEventListener("click", () => navigate(1));
+
+    scenarioInputs.forEach((input) => input.addEventListener("change", () => {
+      if (!input.checked) return;
+      state.scenario.selected = Number(input.value);
+      render();
+      persist();
+      window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: config.scenarioId } }));
+    }));
+    knowledgeInputs.forEach((input) => input.addEventListener("change", () => {
+      if (input.checked) knowledgeForm?.requestSubmit();
+    }));
+    knowledgeForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const selected = knowledgeInputs.find((input) => input.checked);
+      if (!selected) return;
+      state.knowledge.selected = Number(selected.value);
+      render();
+      persist();
+    });
+    const clearResponses = () => {
+      state = emptyState();
+      persist();
+      render();
+    };
+    window.addEventListener("course-progress:reset", clearResponses);
+    render();
+  }));
+</script>

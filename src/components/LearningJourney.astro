@@ -1,0 +1,50 @@
+---
+import CourseIcon from "./CourseIcon.astro";
+import "../styles/learning-journey.css";
+
+type IconName = "circle-play" | "search" | "activity" | "gauge" | "mountain" | "dumbbell" | "award";
+type JourneyItem = { href: string; title: string; description: string; icon: IconName };
+interface Props { items: JourneyItem[]; currentPath: string }
+const { items, currentPath } = Astro.props as Props;
+---
+
+<ol class="learning-journey" data-learning-journey data-current-path={currentPath}>
+  {items.map((item, index) => (
+    <li data-journey-item data-path={item.href} data-state={item.href === currentPath ? "current" : "available"}>
+      <div class="learning-journey__card">
+        <span class="learning-journey__icon"><CourseIcon name={item.icon} /></span>
+        <span class="learning-journey__body">
+          <span class="learning-journey__number">Lesson {index}</span>
+          <strong>{item.title}</strong>
+          <span class="learning-journey__description">{item.description}</span>
+          <span class="learning-journey__status" data-journey-status aria-live="polite"><CourseIcon name="check" class="learning-journey__check" /><CourseIcon name="lock" class="learning-journey__lock" /><span data-journey-status-text>{item.href === currentPath ? "Current lesson" : "Available"}</span></span>
+        </span>
+      </div>
+    </li>
+  ))}
+</ol>
+
+<script>
+  type ProgressState = { completedIds: string[]; unlockedPaths: string[]; milestones: { id: string; path?: string; required: boolean }[] };
+  const journeys = document.querySelectorAll<HTMLElement>("[data-learning-journey]");
+  const updateJourney = (state: ProgressState) => {
+    const completed = new Set(state.completedIds);
+    journeys.forEach((journey) => {
+      const currentPath = journey.dataset.currentPath;
+      journey.querySelectorAll<HTMLElement>("[data-journey-item]").forEach((item) => {
+        const path = item.dataset.path;
+        const requirements = state.milestones.filter((milestone) => milestone.required && (milestone.path || "/") === path);
+        const isComplete = requirements.length > 0 && requirements.every((milestone) => completed.has(milestone.id));
+        const status = isComplete ? "completed" : path === currentPath ? "current" : state.unlockedPaths.includes(path || "") ? "available" : "locked";
+        item.dataset.state = status;
+        const statusLabel = item.querySelector<HTMLElement>("[data-journey-status-text]");
+        if (statusLabel) {
+          const label = status === "completed" ? "Completed" : status === "current" ? "Current lesson" : status === "locked" ? "Locked" : "Available";
+          if (statusLabel.textContent !== label) statusLabel.textContent = label;
+        }
+      });
+    });
+  };
+  window.addEventListener("course-progress:state", ((event: CustomEvent<ProgressState>) => updateJourney(event.detail)) as EventListener);
+  window.dispatchEvent(new Event("course-progress:request-state"));
+</script>

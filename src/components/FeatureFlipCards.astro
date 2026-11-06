@@ -1,0 +1,61 @@
+---
+import "../styles/feature-flip-cards.css";
+
+type Card = { id: string; name: string; features: string; benefit: string; cue: string };
+interface Props { id: string; title: string; intro?: readonly string[]; instruction: string; cards: readonly Card[]; storageKey?: string }
+const { id, title, intro = [], instruction, cards, storageKey = id } = Astro.props as Props;
+---
+
+<section class="feature-flips" id={id} data-completion-id={id} data-required-items={JSON.stringify(cards.map((card) => card.id))} aria-labelledby={`${id}-heading`} data-feature-flips data-flip-storage-key={storageKey}>
+  <div class="container">
+    <h2 id={`${id}-heading`}>{title}</h2>
+    {intro.map((paragraph) => <p>{paragraph}</p>)}
+    <p>{instruction}</p>
+    <p class="feature-flips__progress" data-flip-progress role="status" aria-live="polite">0 of {cards.length} cards revealed</p>
+    <div class="feature-flips__grid">
+      {cards.map((card) => (
+        <button class="feature-flip" type="button" data-flip-id={card.id} aria-expanded="false">
+          <span class="feature-flip__inner">
+            <span class="feature-flip__face feature-flip__front">
+              <span><strong>{card.name}</strong><span class="feature-flip__features">{card.features}</span></span>
+              <span class="feature-flip__action">Select to reveal <span aria-hidden="true">↗</span></span>
+            </span>
+            <span class="feature-flip__face feature-flip__back" aria-hidden="true">
+              <span><span class="sr-only">{card.name}: </span><strong>{card.benefit}</strong><span class="feature-flip__cue">{card.cue}</span></span>
+              <span class="feature-flip__action">Select to turn back <span aria-hidden="true">↶</span></span>
+            </span>
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  courseStateReady.then((courseState) => document.querySelectorAll<HTMLElement>("[data-feature-flips]").forEach((section) => {
+    const cards = [...section.querySelectorAll<HTMLButtonElement>("[data-flip-id]")];
+    const progress = section.querySelector<HTMLElement>("[data-flip-progress]");
+    const updateProgress = (itemIds: string[]) => {
+      if (!progress) return;
+      const count = cards.filter((button) => itemIds.includes(button.dataset.flipId || "")).length;
+      progress.textContent = `${count} of ${cards.length} cards revealed${courseState.completed(section.id) ? " · Completed" : ""}`;
+    };
+    updateProgress(courseState.explored(section.id));
+    window.addEventListener("course-progress:explore-state", ((event: CustomEvent<{ activityId: string; itemIds: string[] }>) => {
+      if (event.detail.activityId === section.id) updateProgress(event.detail.itemIds);
+    }) as EventListener);
+    const setOpen = (button: HTMLButtonElement, open: boolean, record = true) => {
+      button.setAttribute("aria-expanded", String(open));
+      const front = button.querySelector<HTMLElement>(".feature-flip__front");
+      const back = button.querySelector<HTMLElement>(".feature-flip__back");
+      front?.setAttribute("aria-hidden", String(open));
+      back?.setAttribute("aria-hidden", String(!open));
+      if (!record) return;
+      if (open && button.dataset.flipId) window.dispatchEvent(new CustomEvent("course-progress:explore", { detail: { activityId: section.id, itemId: button.dataset.flipId } }));
+    };
+    cards.forEach((button) => button.addEventListener("click", () => setOpen(button, button.getAttribute("aria-expanded") !== "true")));
+    const saved = courseState.explored(section.id);
+    cards.forEach((button) => { if (saved.includes(button.dataset.flipId || "")) setOpen(button, true, false); });
+  }));
+</script>

@@ -1,0 +1,23 @@
+.product-match { padding-block: var(--course-space-section); background: linear-gradient(180deg, #0b0d0e 0%, #4e5356 16%, #c9cfd2 40%, #f5f7f8 62%, #f5f7f8 100%); }
+.product-match > .container > h2, .product-match > .container > p { color: #fff; }
+.product-match > .container > p { max-width: 55rem; }
+.product-match form { margin-top: var(--course-space-intro-interaction); }
+.product-match__bank { padding: var(--course-space-card); border: 1px solid #c2cbd0; border-radius: 1rem; background: #fff; box-shadow: 0 .7rem 1.6rem rgb(0 0 0 / 12%); }
+.product-match__bank > strong { display: block; margin-bottom: .75rem; }
+.product-match__bank ul { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+.product-match__bank li { margin: 0; padding: .5rem .75rem; border: 1px solid #a9b5bb; border-radius: 999px; background: #eef2f4; font-size: var(--course-type-ui-size); }
+.product-match__needs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--course-space-component-gap); margin: 1.5rem 0 0; padding: 0; list-style: none; }
+.product-match__needs li { min-width: 0; margin: 0; padding: var(--course-space-card); border: 1px solid #c2cbd0; border-radius: 1rem; background: #fff; box-shadow: 0 .4rem 1.2rem rgb(0 0 0 / 8%); }
+.product-match__needs label { display: flex; min-height: 3.5rem; align-items: baseline; gap: .75rem; margin-bottom: .75rem; font-weight: 700; }
+.product-match__number { flex: none; color: #176f9b; font-size: var(--course-type-compact-size); }
+.product-match__needs select { width: 100%; min-height: 3rem; padding: .5rem; border: 2px solid #536168; border-radius: .5rem; color: #111; background: #fff; font: inherit; }
+.product-match__needs select:focus-visible, .product-match__actions button:focus-visible { outline: .2rem solid #000; outline-offset: .2rem; }
+.product-match__result { min-height: 1.4rem; margin: .5rem 0 0; font-size: var(--course-type-ui-size); font-weight: 700; }
+.product-match__result[data-result="correct"] { color: #086493; }
+.product-match__result[data-result="incorrect"] { color: #a63838; }
+.product-match__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+.product-match__actions button { min-height: 2.75rem; padding: .75rem 1.5rem; border: 2px solid var(--course-accent); border-radius: 999px; color: #000; background: var(--course-accent); font: inherit; font-size: var(--course-type-ui-size); font-weight: 700; cursor: pointer; }
+.product-match__actions button:hover { background: #69b7dc; }
+.product-match__actions p { margin: 0; font-weight: 700; }
+@media (max-width: 48rem) { .product-match__needs { grid-template-columns: 1fr; } }
+@media (max-width: 32rem) { .product-match__bank li { width: 100%; } .product-match__needs label { min-height: 0; } }

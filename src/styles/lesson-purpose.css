@@ -1,0 +1,13 @@
+/* Keep the ON mark and its divider spacing consistent in every lesson panel. */
+@media (max-width: 48rem) {
+  .course-page :is(.l0-why__symbol, .l1-purpose__symbol, .l2-purpose__symbol, .l3-purpose__symbol, .l4-purpose__symbol, .l5-purpose__symbol, .l6-purpose__symbol) {
+    height: 5rem;
+    padding-bottom: 1rem;
+  }
+
+  .course-page :is(.l0-why__symbol, .l1-purpose__symbol, .l2-purpose__symbol, .l3-purpose__symbol, .l4-purpose__symbol, .l5-purpose__symbol, .l6-purpose__symbol) img {
+    width: 2rem;
+    height: 4rem;
+    object-fit: contain;
+  }
+}

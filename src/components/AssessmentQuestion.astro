@@ -1,0 +1,68 @@
+---
+import { completionSettings } from "../data/course-completion";
+import CourseIcon from "./CourseIcon.astro";
+import "../styles/assessment-panel.css";
+
+type Question = { title: string; question: string; options: readonly string[]; correctFeedback: string; incorrectFeedback: string };
+interface Props { question: Question; id: string; number: number; correctIndex: number }
+const { question, id, number, correctIndex } = Astro.props as Props;
+const config = { id, correctIndex, storageKey: `${completionSettings.storageKey}:assessment:${id}`, correctFeedback: question.correctFeedback, incorrectFeedback: question.incorrectFeedback };
+---
+
+<section class="assessment-panel" id={id} data-completion-id={id} data-single-assessment aria-labelledby={`${id}-heading`}>
+  <div class="assessment-panel__slide">
+    <h2 id={`${id}-heading`}>{question.title}</h2>
+    <div class="assessment-panel__grid">
+      <div class="assessment-panel__question-column">
+        <div class="assessment-panel__question-card"><span class="assessment-panel__question-icon" aria-hidden="true"><CourseIcon name="search" /></span><div class="assessment-panel__question-copy"><p>{question.question}</p></div></div>
+        <div class="assessment-panel__feedback-slot"><span class="assessment-panel__feedback-icon" aria-hidden="true"><CourseIcon name="check" /></span><p data-question-feedback role="status" aria-live="polite"></p></div>
+      </div>
+      <fieldset class="assessment-panel__answers" aria-labelledby={`${id}-heading`}>
+        <legend class="sr-only">{question.question}</legend>
+        {question.options.map((option, index) => (
+          <label class="assessment-panel__option">
+            <input type="radio" name={`${id}-answer`} value={index} />
+            <span>{option}</span>
+          </label>
+        ))}
+      </fieldset>
+    </div>
+  </div>
+  <div class="assessment-panel__navigation" aria-label="Assessment question"><span class="assessment-panel__counter">Question {number} of 2</span></div>
+  <script type="application/json" data-question-config set:html={JSON.stringify(config)}></script>
+</section>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  courseStateReady.then((courseState) => document.querySelectorAll<HTMLElement>("[data-single-assessment]").forEach((panel) => {
+    const node = panel.querySelector<HTMLScriptElement>("[data-question-config]");
+    if (!node?.textContent) return;
+    const config = JSON.parse(node.textContent) as { id: string; correctIndex: number; storageKey: string; correctFeedback: string; incorrectFeedback: string };
+    const inputs = [...panel.querySelectorAll<HTMLInputElement>('input[type="radio"]')];
+    const feedback = panel.querySelector<HTMLElement>("[data-question-feedback]");
+    const slide = panel.querySelector<HTMLElement>(".assessment-panel__slide");
+    let selected: number | null = null;
+    const saved = courseState.get<number | null>(config.id, null);
+    if (saved !== null && Number.isInteger(saved) && saved >= 0 && saved < inputs.length) selected = saved;
+    const render = () => {
+      inputs.forEach((input, index) => { input.checked = selected === index; });
+      if (feedback) feedback.textContent = selected === null ? "" : selected === config.correctIndex ? config.correctFeedback : config.incorrectFeedback;
+      if (selected === null) {
+        if (feedback?.parentElement) delete feedback.parentElement.dataset.result;
+        if (slide) delete slide.dataset.result;
+      } else {
+        const result = selected === config.correctIndex ? "correct" : "incorrect";
+        if (feedback?.parentElement) feedback.parentElement.dataset.result = result;
+        if (slide) slide.dataset.result = result;
+      }
+    };
+    inputs.forEach((input) => input.addEventListener("change", () => {
+      if (!input.checked) return;
+      selected = Number(input.value);
+      courseState.set(config.id, selected);
+      render();
+      window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: config.id } }));
+    }));
+    render();
+  }));
+</script>

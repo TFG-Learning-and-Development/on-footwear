@@ -1,0 +1,71 @@
+---
+import CourseIcon from "./CourseIcon.astro";
+import "../styles/lesson-navigation.css";
+
+type LessonLink = { href: string; label: string; subtitle?: string };
+interface Props { previous?: LessonLink; next?: LessonLink; nextNumber: number; showPreviousTitle?: boolean }
+const { previous, next, nextNumber, showPreviousTitle = false } = Astro.props as Props;
+---
+
+<nav class="lesson-navigation" aria-label="Lesson navigation">
+  <div class="container">
+    {next ? (
+      <div class="lesson-navigation__card">
+        <div class="lesson-navigation__details">
+          <p class="lesson-navigation__eyebrow">Up next <span aria-hidden="true">·</span> Lesson {nextNumber}</p>
+          <h2 class="lesson-navigation__title">{next.label}</h2>
+          {next.subtitle && <p class="lesson-navigation__subtitle">{next.subtitle}</p>}
+          {previous && (
+            <a class="lesson-navigation__link--previous" href={previous.href} aria-label={`Previous lesson: ${previous.label}`}>
+              <CourseIcon name="arrow-left" />
+              <span>{showPreviousTitle ? "Previous lesson: " + previous.label : "Previous lesson"}</span>
+            </a>
+          )}
+        </div>
+        <div class="lesson-navigation__actions">
+          <span class="lesson-navigation__icon" aria-hidden="true"><CourseIcon name="footprints" /></span>
+          <a class="lesson-navigation__link--next" href={next.href} data-next-path={next.href} data-current-number={nextNumber - 1} aria-label={`Next lesson: ${next.label}`}>
+            <CourseIcon name="lock" class="lesson-navigation__lock" />
+            <span data-next-label>Next lesson</span>
+            <CourseIcon name="arrow-right" class="lesson-navigation__arrow" />
+          </a>
+          <p class="lesson-navigation__locked-reason" data-next-reason hidden>Complete Lesson {nextNumber - 1} to 100% before continuing.</p>
+        </div>
+      </div>
+    ) : previous && (
+      <div class="lesson-navigation__card lesson-navigation__card--previous-only">
+        <a class="lesson-navigation__link--previous" href={previous.href} aria-label={`Previous lesson: ${previous.label}`}>
+          <CourseIcon name="arrow-left" />
+          <span>Previous lesson: {previous.label}</span>
+        </a>
+      </div>
+    )}
+  </div>
+</nav>
+
+<script>
+  import { courseUrl } from "../lib/course-url";
+  const nextLink = document.querySelector<HTMLAnchorElement>("[data-next-path]");
+  const updateNext = (paths: string[]) => {
+    if (!nextLink) return;
+    const path = nextLink.dataset.nextPath || "";
+    const locked = !paths.includes(path);
+    nextLink.dataset.locked = String(locked);
+    const label = nextLink.querySelector<HTMLElement>("[data-next-label]");
+    const reason = document.querySelector<HTMLElement>("[data-next-reason]");
+    if (locked) {
+      nextLink.removeAttribute("href");
+      nextLink.setAttribute("aria-disabled", "true");
+      nextLink.setAttribute("aria-label", `Locked next lesson. Complete Lesson ${nextLink.dataset.currentNumber} to 100% before continuing.`);
+      if (label) label.textContent = "Locked";
+    } else {
+      nextLink.href = courseUrl(path);
+      nextLink.removeAttribute("aria-disabled");
+      nextLink.setAttribute("aria-label", `Next lesson: ${document.querySelector(".lesson-navigation__title")?.textContent || ""}`);
+      if (label) label.textContent = "Next lesson";
+    }
+    if (reason) reason.hidden = !locked;
+  };
+  window.addEventListener("course-progress:state", ((event: CustomEvent<{ unlockedPaths: string[] }>) => updateNext(event.detail.unlockedPaths)) as EventListener);
+  window.dispatchEvent(new Event("course-progress:request-state"));
+</script>

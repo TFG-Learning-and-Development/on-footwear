@@ -31,6 +31,7 @@ This repository is a reusable Astro course shell.
 - Do not introduce a competing typography system or change shared typography to match a mood board, design board or other visual reference.
 - Apply a specific heading override only when the user explicitly requests it, and scope the override to that heading without changing shared tokens.
 - Do not add learner-facing eyebrow content or small contextual labels above headings. Start with the semantic heading and use ordinary introductory copy below it when needed.
+- When a hero places an `h1` directly before an `h2`, give them explicit course-local spacing. Check their rendered bounding boxes at mobile and desktop widths; keep at least 32px between the headings. Do not rely on default heading margins.
 
 ### Completion tracking
 

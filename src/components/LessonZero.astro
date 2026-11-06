@@ -1,0 +1,120 @@
+---
+import { courseData } from "../data/course";
+import AssessmentPanel from "./AssessmentPanel.astro";
+import LearningJourney from "./LearningJourney.astro";
+import "../styles/lesson-zero.css";
+
+const lesson = courseData.lesson0;
+const journeyIcons = ["circle-play", "search", "activity", "gauge", "mountain", "dumbbell", "award"] as const;
+const journeyItems = lesson.learningRun.lessons.map((title, index) => ({
+  href: courseData.navigation[index].href,
+  title,
+  description: lesson.learningRun.descriptions[index],
+  icon: journeyIcons[index],
+}));
+---
+
+<div class="lesson-zero">
+  <section class="l0-hero" id="lesson-0-guidance" data-completion-id="lesson-0-guidance">
+    <img class="l0-hero__image" src="/assets/hero/Hero Image 4.jpeg" alt="ON shoes and travel gear arranged around an open suitcase" width="2880" height="1620" fetchpriority="high" />
+    <div class="l0-hero__shade"></div>
+    <div class="container l0-hero__copy">
+      <h1>{courseData.navigation[0].label}</h1>
+      <h2>{lesson.guidance.title}</h2>
+      <p>{lesson.guidance.text}</p>
+    </div>
+  </section>
+
+  <section class="l0-why container" id="lesson-0-why" data-completion-id="lesson-0-why">
+    <div class="l0-why__head">
+      <h2>{lesson.why.title}</h2>
+    </div>
+    <p>{lesson.why.text}</p>
+    <div class="l0-why__inset">
+      <div class="l0-why__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+      <div class="l0-why__purpose">
+        <p><strong>Lesson purpose:</strong> {lesson.why.purpose}</p>
+        <p><strong>Learning objective:</strong> {lesson.why.objective}</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="l0-transition">
+    <section class="l0-customers" id="lesson-0-customers" data-completion-id="lesson-0-customers">
+      <div class="container l0-customers__inner">
+        <h2>{lesson.customers.title}</h2>
+        <p>{lesson.customers.text}</p>
+        <div class="l0-collections" aria-label="ON footwear collections">
+          <img src="/assets/footwear/Cloudrunner 3.jpeg" alt="Cloudrunner 3 everyday running shoe" loading="lazy" />
+          <img src="/assets/footwear/Cloudboom Strike 2_1.jpeg" alt="Cloudboom Strike 2 performance running shoe" loading="lazy" />
+          <img src="/assets/footwear/Cloudvista 3_1.jpeg" alt="Cloudvista 3 outdoor shoe" loading="lazy" />
+          <img src="/assets/footwear/Cloud X 5 _1.jpeg" alt="Cloud X 5 training and lifestyle shoe" loading="lazy" />
+        </div>
+      </div>
+    </section>
+
+    <section class="l0-assessment" aria-label="Lesson activities">
+      <div class="l0-transition__motif" aria-hidden="true">
+        <img src="/assets/logos/ON Logo Black.png" alt="" width="1091" height="2177" loading="lazy" />
+      </div>
+      <div class="container">
+        <AssessmentPanel scenario={lesson.scenario} knowledge={lesson.knowledge} scenarioId="lesson-0-scenario" knowledgeId="lesson-0-check" scenarioCorrectIndex={1} knowledgeCorrectIndex={1} />
+      </div>
+    </section>
+  </div>
+
+  <section class="l0-learning-run" id="lesson-0-learning-run" data-completion-id="lesson-0-learning-run">
+    <div class="container">
+      <h2>{lesson.learningRun.title}</h2>
+      <p>{lesson.learningRun.text}</p>
+      <LearningJourney items={journeyItems} currentPath="/" />
+    </div>
+  </section>
+
+  <section class="l0-reflection" id="lesson-0-reflection" data-completion-id="lesson-0-reflection">
+    <div class="container">
+      <h2>{lesson.reflection.title}</h2>
+      <form data-reflection-form>
+        <label for="lesson-0-response">{lesson.reflection.prompt}</label>
+        <p id="lesson-0-reflection-instruction">{lesson.reflection.instruction}</p>
+        <textarea id="lesson-0-response" rows="5" aria-describedby="lesson-0-reflection-instruction" required></textarea>
+        <button type="submit" data-reflection-continue disabled>Continue</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="l0-takeaway" id="lesson-0-takeaway" data-completion-id="lesson-0-takeaway">
+    <div class="container">
+      <h2>{lesson.takeaway.title}</h2>
+      <p>{lesson.takeaway.text}</p>
+    </div>
+  </section>
+</div>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  import { completionSettings } from "../data/course-completion";
+  import { reflectionStorageKey, restoreReflection, saveReflection } from "../lib/reflection-storage";
+  courseStateReady.then((courseState) => {
+  const reflection = document.querySelector<HTMLFormElement>("[data-reflection-form]");
+  if (reflection) {
+    const input = reflection.querySelector<HTMLTextAreaElement>("textarea");
+    const button = reflection.querySelector<HTMLButtonElement>("[data-reflection-continue]");
+    const storageKey = reflectionStorageKey(completionSettings.storageKey, "lesson-0-reflection", courseState);
+    if (input) input.value = restoreReflection(storageKey);
+    const update = () => { if (button) button.disabled = !input?.value.trim(); };
+    update();
+    input?.addEventListener("input", () => {
+      saveReflection(storageKey, input?.value || "");
+      update();
+    });
+    reflection.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!input?.value.trim()) return;
+      saveReflection(storageKey, input.value);
+      window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: "lesson-0-reflection" } }));
+      document.getElementById("lesson-0-takeaway")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    });
+  }
+  });
+</script>

@@ -1,0 +1,76 @@
+---
+import "../styles/product-match.css";
+
+type Pair = { need: string; productId: string };
+type Product = { id: string; name: string };
+interface Props { id: string; title: string; intro?: string; instruction: string; pairs: readonly Pair[]; products: readonly Product[]; storageKey?: string }
+const { id, title, intro, instruction, pairs, products, storageKey = id } = Astro.props as Props;
+const answerOrder = products.length === 5 ? [2, 4, 0, 3, 1] : products.map((_, index) => (index + 2) % products.length);
+const options = answerOrder.map((index) => products[index]).filter(Boolean);
+const config = { answers: pairs.map((pair) => pair.productId), storageKey };
+---
+
+<section class="product-match" id={id} data-completion-id={id} aria-labelledby={`${id}-heading`}>
+  <div class="container">
+    <h2 id={`${id}-heading`}>{title}</h2>
+    {intro && <p>{intro}</p>}
+    <p>{instruction}</p>
+    <form data-product-match>
+      <div class="product-match__bank" aria-label="Products to choose from">
+        <strong>Products</strong>
+        <ul>{options.map((product) => <li>{product.name}</li>)}</ul>
+      </div>
+      <ol class="product-match__needs">
+        {pairs.map((pair, index) => (
+          <li>
+            <label for={`${id}-choice-${index}`}><span class="product-match__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span>{pair.need}</span></label>
+            <select id={`${id}-choice-${index}`} required>
+              <option value="">Choose a product</option>
+              {options.map((product) => <option value={product.id}>{product.name}</option>)}
+            </select>
+            <p class="product-match__result" data-match-result role="status" aria-live="polite"></p>
+          </li>
+        ))}
+      </ol>
+      <div class="product-match__actions">
+        <button type="submit">Check matches</button>
+        <p data-match-summary role="status" aria-live="polite"></p>
+      </div>
+      <script type="application/json" data-match-config set:html={JSON.stringify(config)}></script>
+    </form>
+  </div>
+</section>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  courseStateReady.then((courseState) => document.querySelectorAll<HTMLFormElement>("[data-product-match]").forEach((form) => {
+    const node = form.querySelector<HTMLScriptElement>("[data-match-config]");
+    if (!node?.textContent) return;
+    const config = JSON.parse(node.textContent) as { answers: string[]; storageKey: string };
+    const selects = [...form.querySelectorAll<HTMLSelectElement>("select")];
+    const results = [...form.querySelectorAll<HTMLElement>("[data-match-result]")];
+    const summary = form.querySelector<HTMLElement>("[data-match-summary]");
+    const save = () => courseState.set(form.closest("section")?.id + ":selections", selects.map((select) => select.value));
+    const saved = courseState.get<string[]>(form.closest("section")?.id + ":selections", []);
+    if (Array.isArray(saved)) selects.forEach((select, index) => { if (saved[index] && [...select.options].some((option) => option.value === saved[index])) select.value = saved[index]; });
+    selects.forEach((select) => select.addEventListener("change", () => {
+      results.forEach((result) => { result.textContent = ""; delete result.dataset.result; });
+      if (summary) summary.textContent = "";
+      save();
+    }));
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      let correct = 0;
+      selects.forEach((select, index) => {
+        const matched = select.value === config.answers[index];
+        if (matched) correct++;
+        results[index].textContent = matched ? "Correct" : "Try a different product";
+        results[index].dataset.result = matched ? "correct" : "incorrect";
+      });
+      if (summary) summary.textContent = `${correct} of ${selects.length} matched correctly.${correct === selects.length ? "" : " Revise the highlighted matches and check again."}`;
+      save();
+      window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId: form.closest("section")?.id } }));
+    });
+  }));
+</script>

@@ -1,0 +1,50 @@
+---
+import { courseData } from "../data/course";
+import RunFramework from "./RunFramework.astro";
+import RunDialogue from "./RunDialogue.astro";
+import "../styles/lesson-six.css";
+
+const lesson = courseData.lesson6;
+---
+
+<div class="lesson-six">
+  <section class="l6-hero" id="lesson-6-introduction" data-completion-id="lesson-6-introduction" aria-labelledby="lesson-6-title">
+    <img class="l6-hero__image" src="/assets/hero/Hero Image 3.jpeg" alt="Runner in ON footwear moving along a city road" width="2880" height="1620" fetchpriority="high" />
+    <div class="l6-hero__shade"></div>
+    <div class="container l6-hero__copy">
+      <h1 id="lesson-6-title">{lesson.title}</h1>
+      <h2>{lesson.introduction.title}</h2>
+      {lesson.introduction.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </section>
+
+  <section class="l6-purpose container" aria-label="Lesson purpose and learning objective">
+    <div class="l6-purpose__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+    <div><p><strong>Lesson purpose:</strong> {lesson.purpose}</p><p><strong>Learning objective:</strong> {lesson.objective}</p></div>
+  </section>
+
+  <RunFramework />
+  <RunDialogue />
+
+  <section class="l6-conclusion" id="lesson-6-conclusion" data-completion-id="lesson-6-conclusion" aria-labelledby="lesson-6-conclusion-heading">
+    <div class="container">
+      <h2 id="lesson-6-conclusion-heading">{lesson.conclusion.title}</h2>
+      {lesson.conclusion.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      <div class="l6-conclusion__reminder">
+        <p><strong>{lesson.conclusion.reminder}</strong></p>
+        <p class="l6-conclusion__steps">{lesson.conclusion.steps.join(" ")}</p>
+        <p>{lesson.conclusion.final}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="l6-challenge" id="lesson-6-challenge" data-completion-id="lesson-6-challenge" aria-labelledby="lesson-6-challenge-heading">
+    <div class="container">
+      <div class="l6-challenge__card">
+        <h2 id="lesson-6-challenge-heading">{lesson.challenge.title}</h2>
+        <p>{lesson.challenge.text}</p>
+        <p class="l6-challenge__location">{lesson.challenge.location}</p>
+      </div>
+    </div>
+  </section>
+</div>

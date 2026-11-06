@@ -1,0 +1,85 @@
+---
+import { courseData } from "../data/course";
+import { completionSettings } from "../data/course-completion";
+import AssessmentQuestion from "./AssessmentQuestion.astro";
+import FeatureFlipCards from "./FeatureFlipCards.astro";
+import ProductExplorer from "./ProductExplorer.astro";
+import ProductMatch from "./ProductMatch.astro";
+import "../styles/lesson-four.css";
+
+const lesson = courseData.lesson4;
+---
+
+<div class="lesson-four">
+  <section class="l4-hero" id="lesson-4-introduction" data-completion-id="lesson-4-introduction">
+    <img class="l4-hero__image" src="/assets/hero/Hero Image 4.jpeg" alt="ON footwear and outdoor gear arranged beside an open bag" width="2880" height="1620" fetchpriority="high" />
+    <div class="l4-hero__shade"></div>
+    <div class="container l4-hero__copy">
+      <h1>{lesson.title}</h1>
+      <h2>{lesson.introduction.title}</h2>
+      {lesson.introduction.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </section>
+
+  <section class="l4-purpose container" aria-label="Lesson purpose and learning objective">
+    <div class="l4-purpose__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+    <div><p><strong>Lesson purpose:</strong> {lesson.purpose}</p><p><strong>Learning objective:</strong> {lesson.objective}</p></div>
+  </section>
+
+  <section class="l4-lerato" id="lesson-4-lerato" aria-labelledby="lesson-4-lerato-heading">
+    <div class="container">
+      <div class="l4-lerato__story">
+        <div class="l4-lerato__copy">
+          <h2 id="lesson-4-lerato-heading">{lesson.lerato.title}</h2>
+          <p class="l4-lerato__profile"><strong>Customer profile:</strong> {lesson.lerato.profile}</p>
+          <p>{lesson.lerato.text}</p>
+        </div>
+        <img class="l4-lerato__image" src="/assets/hero/Hero Image 5.jpeg" alt="ON footwear and outdoor equipment laid out for a day trip" width="2880" height="1620" loading="lazy" />
+      </div>
+      <AssessmentQuestion question={lesson.lerato.assessment} id="lesson-4-lerato-check" number={1} correctIndex={0} />
+    </div>
+  </section>
+
+  <section class="l4-collection" id="lesson-4-collection" aria-labelledby="lesson-4-collection-heading">
+    <div class="container">
+      <h2 id="lesson-4-collection-heading">{lesson.collection.title}</h2>
+      <p>{lesson.collection.intro}</p>
+    </div>
+  </section>
+
+  <ProductExplorer
+    id="lesson-4-products"
+    title={lesson.explorer.title}
+    intro={lesson.explorer.intro}
+    instruction={lesson.collection.instruction}
+    categories={lesson.explorer.categories}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-4:products`}
+  />
+
+  <FeatureFlipCards
+    id="lesson-4-feature-cards"
+    title={lesson.flipCards.title}
+    instruction={lesson.flipCards.instruction}
+    cards={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-4:feature-cards`}
+  />
+
+  <ProductMatch
+    id="lesson-4-matching"
+    title={lesson.matching.title}
+    intro={lesson.matching.intro}
+    instruction={lesson.matching.instruction}
+    pairs={lesson.matching.pairs}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-4:matching`}
+  />
+
+  <section class="l4-knowledge" aria-label="Lesson 4 knowledge check">
+    <div class="container"><AssessmentQuestion question={lesson.knowledge} id="lesson-4-knowledge" number={2} correctIndex={2} /></div>
+  </section>
+
+  <section class="l4-takeaway" id="lesson-4-takeaway" data-completion-id="lesson-4-takeaway">
+    <div class="container"><h2>{lesson.takeaway.title}</h2><p>{lesson.takeaway.text}</p></div>
+  </section>
+</div>

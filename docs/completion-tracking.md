@@ -1,10 +1,14 @@
 # Completion tracking
 
-Completion is configured in `src/data/course-completion.ts` and rendered by `CourseProgress.astro`. Standalone launches use browser storage; LMS launches use the SCORM 1.2 API and `cmi.suspend_data`. The configured milestones are the single source of truth for the progress display and LMS completion.
+Completion is configured in `src/data/course-completion.ts` and rendered by `CourseProgress.astro`. Standalone launches use browser storage; LMS launches use the SCORM 1.2 API and `cmi.suspend_data`. The configured milestones are the single source of truth for overall and per-lesson progress and LMS completion. The ON course has 51 required milestones across all seven lessons (7, 11, 7, 7, 7, 7, 5), uses the versioned `on-match-the-move:v3` storage key, and enables LMS completion only after all requirements are met. The seven-question People Connect quiz is outside this Astro course.
+
+Lessons unlock in order: Lesson 0 is available immediately, and each later lesson becomes available when every required milestone in the preceding lessons is complete. The header, Progress dropdown, learning journey and next-lesson card use the same derived unlock state. A locked direct route redirects to the highest unlocked lesson after persisted state is restored, with an explanation. A People Connect launch at the course entry resumes at the saved lesson when it is unlocked. This is client-side access control for the static Astro course; the LMS launch and browser JavaScript remain necessary for normal operation. Previous lessons stay available for revision.
+
+The Progress dropdown also lists the current lesson's required activities directly from the milestone registry. Its checklist shows completed and outstanding items, the completed count and the number left before the next lesson unlocks. Outstanding items link to their on-page target where available; selecting one closes Progress, focuses the activity and briefly outlines it. The checklist is display-only: it creates no new milestones or LMS state.
 
 ## Mandatory course-build workflow
 
-Configure completion tracking during every course build; no separate tracking request is required. Replace the starter milestones with course-specific requirements derived from the storyboard and the content actually implemented. Do not retain placeholder requirements or configure milestones for content that is absent.
+Configure completion tracking during every course build; no separate tracking request is required. Add course-specific requirements derived from the new storyboard and content actually implemented. Do not configure milestones for content that is absent.
 
 Connect required content, videos and interactions to the appropriate existing behavior: VIEW for qualified section viewing, WATCH for merged unique playback ranges, attempt-based SUBMIT or COMPLETE for questions and submitted activities, and EXPLORE for configured child items. Preserve all approved rules, thresholds, weighting, events, persistence and restoration. Do not add correctness gates, longer dwell times, playback restrictions or other policy changes unless explicitly approved.
 
@@ -12,7 +16,7 @@ Optional resources, navigation links, the fixed footer message and Back to top a
 
 ## Configuration
 
-Each milestone has a unique `id`, learner-facing `label`, supported `type`, unique `targetId`, and explicit `required` boolean. Required milestones are equally weighted; non-required milestones never enter the percentage denominator. A `watch` milestone may set `threshold` from greater than `0` through `1`; the default is `0.8`. Use a course-specific, versioned key such as `astro-course-progress:course-slug:v1`.
+Each milestone has a unique `id`, learner-facing `label`, supported `type`, unique `targetId`, and explicit `required` boolean. For requirements on separate pages, set `path` to the lesson route (for example `/lesson-2/`). An `explore` requirement on another page also needs `requiredItems` for cross-page restoration. Required milestones are equally weighted; non-required milestones never enter the percentage denominator. A `watch` milestone may set `threshold` from greater than `0` through `1`; the default is `0.8`. Use a course-specific, versioned key such as `astro-course-progress:course-slug:v1`.
 
 Supported types:
 
@@ -31,8 +35,9 @@ For a standard question, use `submit`, mark its radio or select answer with `dat
 - Send `course-progress:complete` with `{ activityId }`.
 - An explore component may send `course-progress:request-restore` with `{ activityId, apply(itemIds) }`.
 - The manager emits `course-progress:explore-state` with `{ activityId, itemIds }`, `course-progress:restore-complete` with `{ activityId, complete }`, and `course-progress:reset`.
+- A display component may send `course-progress:request-state`. The manager emits `course-progress:state` with `{ completedIds, milestones: [{ id, path, required }] }` on request and after progress renders. `LearningJourney.astro` derives lesson states from this validated tracker state; navigation alone never marks a lesson complete.
 
-Standalone progress, merged video ranges, and explored child IDs are stored in `localStorage`. An LMS launch restores validated, versioned state only from `cmi.suspend_data`; browser storage cannot complete that LMS attempt. The LMS save includes completed milestones, video ranges and explored child IDs, with a hard 4,096-character limit and a console diagnostic if the payload is too large. An internal reset event is available only in development or verification builds for automated tests. Individual activity Retry/Clear controls remain learner-facing. Changing the key version intentionally starts a new progress record.
+Standalone progress, merged video ranges, explored child IDs and small interaction selections are stored in `localStorage`. An LMS launch restores validated, versioned state only from `cmi.suspend_data`; browser storage cannot complete that LMS attempt. The LMS save includes completed milestones, video ranges, explored child IDs and small non-text selections, with a hard 4,096-character limit and a console diagnostic if the payload is too large. Free-text reflections are never sent to the LMS. Lesson 0 and Lesson 1 written responses are saved separately in browser `localStorage` as learners type and again when they select Continue or Save response. Standalone responses retain their existing keys (`<storageKey>:lesson-0-reflection-text` and `:lesson-1-reflection-text`). LMS responses use `<storageKey>:learner:<encoded cmi.core.student_id>:<activityId>-text`; they restore only for the same learner in the same browser. If the LMS provides no reliable student ID, the course does not save or restore LMS reflection prose in shared browser storage. On another browser or device, SCORM restores the completion milestone, but the text field remains empty. Browser storage can be inspected or cleared by someone with device access, so it is not a confidential record. `cmi.core.lesson_location` records the current lesson route. An internal reset event is available only in development or verification builds for automated tests. Individual activity Retry/Clear controls remain learner-facing. Changing the key version intentionally starts a new progress record.
 
 ## Known inherited limitations
 
@@ -45,9 +50,9 @@ Standalone progress, merged video ranges, and explored child IDs are stored in `
 
 ## Storyboard alignment to confirm
 
-The current course implements the A-M-E-R steps as a static flow and the Customer needs exercise as submitted matching. The source storyboard also describes a four-step reveal and a branching scenario. Those interactions are not present as separate activities, so they are not required milestones. Confirm whether those media notes remain intended requirements before changing the course content or completion configuration.
+Lessons 0–6 are implemented and tracked. The 51 requirements are documented in `docs/completion-implementation-plan.md`. Navigation and the separate People Connect final quiz are excluded from Astro requirements.
 
-The SCORM 1.2 bridge initializes from the LMS-provided API, marks a fresh attempt incomplete, and sends `completed` with an immediate commit only after every configured required milestone is complete. It never invents scores or passed/failed results and preserves existing completed or passed status. Progress changes and tab hiding save data; actual page exit uses one guarded `LMSFinish` and a suspend exit value. API errors include the failed operation and LMS error details in the console. The single-SCO manifest and ZIP are generated by `npm run package:scorm`.
+The SCORM 1.2 bridge initializes from the LMS-provided API, marks a fresh attempt incomplete, and sends `completed` with an immediate commit only when the final required milestone is earned and the bounded suspend data is saved. It never invents scores or passed/failed results and preserves existing completed or passed status. Progress changes and tab hiding save data without granting completion; actual page exit uses one guarded `LMSFinish` and a suspend exit value. API errors include the failed operation and LMS error details in the console. The single-SCO manifest and ZIP are generated by `npm run package:scorm` when packaging is authorized.
 
 ## Handover readiness
 

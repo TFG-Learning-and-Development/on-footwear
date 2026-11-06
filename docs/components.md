@@ -4,6 +4,30 @@ The starter uses custom Astro components and shared rules in `src/styles/global.
 
 All course components and interactions must use the inherited typography system; do not introduce component-local type scales or font families. Completion tracking must be configured as part of every course build and connected to each required component using the contracts in [`completion-tracking.md`](completion-tracking.md).
 
+For card grids built with semantic `ul` or `ol` elements, reset item margins in the component styles. The shared `main li + li` prose rule adds a top margin to later items and otherwise puts their icons and headings out of alignment. Check card alignment at desktop and responsive widths.
+
+## `AssessmentPanel`
+
+Pass `scenario` and `knowledge` objects containing their approved titles, prompts, answer options and feedback. Set unique `scenarioId` and `knowledgeId` values that match completion targets, the zero-based correct indexes, and `scenarioAttempts`. The component keeps the knowledge check collapsed, shows feedback in a reserved panel and dispatches the scenario's existing `course-progress:complete` event on a valid attempt. The knowledge form retains the shared attempt-based SUBMIT contract.
+
+## `ProductExplorer`
+
+Pass a unique `id`, title, introduction, instruction, category records and product records. Each category has an `id`, `label` and `productIds`; each product supplies its full approved content, a static Customer-profile image and ordered footwear image filenames. The first image is the hero view. Category tabs support arrow, Home and End keys; product and image buttons are ordinary keyboard controls. Pass a course-specific `storageKey` to restore the selected category and product. The component is data-driven for later product collections; Lesson 2 uses it without adding later lessons' content.
+
+## `FeatureFlipCards` and `ProductMatch`
+
+`FeatureFlipCards` accepts product names, approved features, benefits and recommendation cues. It follows the Lesson 1 flip-card treatment and saves revealed cards under its `storageKey`. `ProductMatch` accepts need/product pairs, keeps product choices separate from the needs, checks all five relationships on request and allows corrections. It saves the learner's selections under its `storageKey`. Both emit the existing interaction events; add course completion milestones only when the course build brief authorizes them.
+
+## `LearningJourney`
+
+Pass seven or more `{ href, title, description, icon }` items and the `currentPath`. Available icon names are `circle-play`, `search`, `activity`, `gauge`, `mountain`, `dumbbell` and `award`. The component requests validated progress through `course-progress:request-state`. A lesson displays Completed only when that route has configured requirements and all are satisfied; routes with no requirements stay Available.
+
+The inline icon paths come from Lucide; the distribution notice is in `public/LUCIDE-LICENSE.txt`.
+
+## `LessonNavigation`
+
+Pass optional `previous` and `next` links as `{ href, label }`. The compact controls show the adjacent lesson title, use the approved blue and support keyboard focus. Navigation does not dispatch completion events.
+
 ## `SectionHeading`
 
 Properties:

@@ -1,0 +1,89 @@
+---
+import { courseData } from "../data/course";
+import { completionSettings } from "../data/course-completion";
+import AssessmentQuestion from "./AssessmentQuestion.astro";
+import FeatureFlipCards from "./FeatureFlipCards.astro";
+import ProductExplorer from "./ProductExplorer.astro";
+import ProductMatch from "./ProductMatch.astro";
+import "../styles/lesson-five.css";
+
+const lesson = courseData.lesson5;
+---
+
+<div class="lesson-five">
+  <section class="l5-hero" id="lesson-5-introduction" data-completion-id="lesson-5-introduction">
+    <img class="l5-hero__image" src="/assets/hero/Hero Image 2.JPEG" alt="Two athletes moving in ON footwear on a city road" width="2880" height="1620" fetchpriority="high" />
+    <div class="l5-hero__shade"></div>
+    <div class="container l5-hero__copy">
+      <h1>{lesson.title}</h1>
+      <h2>{lesson.introduction.title}</h2>
+      {lesson.introduction.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </section>
+
+  <section class="l5-purpose container" aria-label="Lesson purpose and learning objective">
+    <div class="l5-purpose__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+    <div><p><strong>Lesson purpose:</strong> {lesson.purpose}</p><p><strong>Learning objective:</strong> {lesson.objective}</p></div>
+  </section>
+
+  <section class="l5-thabo" id="lesson-5-thabo" aria-labelledby="lesson-5-thabo-heading">
+    <div class="container">
+      <div class="l5-thabo__story">
+        <div class="l5-thabo__copy">
+          <h2 id="lesson-5-thabo-heading">{lesson.thabo.title}</h2>
+          <p class="l5-thabo__profile"><strong>Customer profile:</strong> {lesson.thabo.profile}</p>
+          <p>{lesson.thabo.text}</p>
+        </div>
+        <img class="l5-thabo__image" src="/assets/portraits/Image option 1.jpeg" alt="Runner in ON footwear moving along a city pavement" width="1440" height="2160" loading="lazy" />
+      </div>
+      <AssessmentQuestion question={lesson.thabo.assessment} id="lesson-5-thabo-check" number={1} correctIndex={1} />
+    </div>
+  </section>
+
+  <section class="l5-collection" id="lesson-5-collection" aria-labelledby="lesson-5-collection-heading">
+    <div class="container">
+      <h2 id="lesson-5-collection-heading">{lesson.collection.title}</h2>
+      <p>{lesson.collection.intro}</p>
+    </div>
+  </section>
+
+  <ProductExplorer
+    id="lesson-5-products"
+    title={lesson.explorer.title}
+    intro={lesson.explorer.intro}
+    instruction={lesson.collection.instruction}
+    categories={lesson.explorer.categories}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-5:products`}
+  />
+
+  <FeatureFlipCards
+    id="lesson-5-feature-cards"
+    title={lesson.flipCards.title}
+    instruction={lesson.flipCards.instruction}
+    cards={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-5:feature-cards`}
+  />
+
+  <ProductMatch
+    id="lesson-5-matching"
+    title={lesson.matching.title}
+    intro={lesson.matching.intro}
+    instruction={lesson.matching.instruction}
+    pairs={lesson.matching.pairs}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-5:matching`}
+  />
+
+  <section class="l5-knowledge" aria-label="Lesson 5 knowledge check">
+    <div class="container"><AssessmentQuestion question={lesson.knowledge} id="lesson-5-knowledge" number={2} correctIndex={1} /></div>
+  </section>
+
+  <section class="l5-takeaway" id="lesson-5-takeaway" data-completion-id="lesson-5-takeaway">
+    <div class="container"><h2>{lesson.takeaway.title}</h2><p>{lesson.takeaway.text}</p></div>
+  </section>
+
+  <section class="l5-transition" id="lesson-5-transition" aria-label="Transition to the final lesson">
+    <div class="container"><p class="l5-transition__statement">{lesson.transition}</p></div>
+  </section>
+</div>

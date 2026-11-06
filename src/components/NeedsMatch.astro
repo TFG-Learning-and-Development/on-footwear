@@ -13,21 +13,21 @@ const { id, pairs } = Astro.props as Props;
 const choices = [...pairs].sort((first, second) => first.benefit.localeCompare(second.benefit, "en"));
 ---
 
-<form id={id} class="winflo-match" data-winflo-match data-completion-id={id} aria-label="Match Customer needs to benefits" aria-describedby={`${id}-instructions`}>
-  <p class="winflo-match__instructions" id={`${id}-instructions`}>Match each Customer need with the best response. Use each response letter once, then check your matches.</p>
-  <div class="winflo-match__layout">
-    <div class="winflo-match__responses">
+<form id={id} class="course-match" data-course-match data-completion-id={id} aria-label="Match Customer needs to benefits" aria-describedby={`${id}-instructions`}>
+  <p class="course-match__instructions" id={`${id}-instructions`}>Match each Customer need with the best response. Use each response letter once, then check your matches.</p>
+  <div class="course-match__layout">
+    <div class="course-match__responses">
       <h4>You can say…</h4>
       <ol>
         {choices.map((choice, index) => (
           <li>
-            <strong class="winflo-match__letter">{String.fromCharCode(65 + index)}</strong>
+            <strong class="course-match__letter">{String.fromCharCode(65 + index)}</strong>
             <q>{choice.benefit}</q>
           </li>
         ))}
       </ol>
     </div>
-    <div class="winflo-match__needs">
+    <div class="course-match__needs">
       <h4>If the Customer says…</h4>
       <ol>
         {pairs.map((pair, index) => (
@@ -37,21 +37,21 @@ const choices = [...pairs].sort((first, second) => first.benefit.localeCompare(s
               <option value="">Choose a response letter</option>
               {choices.map((choice, choiceIndex) => <option value={choice.id}>{String.fromCharCode(65 + choiceIndex)}</option>)}
             </select>
-            <span class="winflo-match__status" id={`${id}-${pair.id}-status`} data-match-status hidden></span>
+            <span class="course-match__status" id={`${id}-${pair.id}-status`} data-match-status hidden></span>
           </li>
         ))}
       </ol>
     </div>
   </div>
-  <div class="winflo-match__actions">
-    <button class="winflo-match__submit" type="submit" data-match-submit>Check matches</button>
-    <button class="winflo-match__clear" type="reset">Clear selections</button>
+  <div class="course-match__actions">
+    <button class="course-match__submit" type="submit" data-match-submit>Check matches</button>
+    <button class="course-match__clear" type="reset">Clear selections</button>
   </div>
-  <p class="winflo-match__feedback" data-match-feedback role="status" aria-live="polite" hidden></p>
+  <p class="course-match__feedback" data-match-feedback role="status" aria-live="polite" hidden></p>
 </form>
 
 <script>
-  const match = document.querySelector<HTMLFormElement>("[data-winflo-match]");
+  const match = document.querySelector<HTMLFormElement>("[data-course-match]");
   if (match) {
     const rows = Array.from(match.querySelectorAll<HTMLElement>("[data-match-id]"));
     const feedback = match.querySelector<HTMLElement>("[data-match-feedback]");

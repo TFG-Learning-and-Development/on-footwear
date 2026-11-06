@@ -1,0 +1,85 @@
+---
+import { courseData } from "../data/course";
+import { completionSettings } from "../data/course-completion";
+import AssessmentQuestion from "./AssessmentQuestion.astro";
+import FeatureFlipCards from "./FeatureFlipCards.astro";
+import ProductExplorer from "./ProductExplorer.astro";
+import ProductMatch from "./ProductMatch.astro";
+import "../styles/lesson-three.css";
+
+const lesson = courseData.lesson3;
+---
+
+<div class="lesson-three">
+  <section class="l3-hero" id="lesson-3-introduction" data-completion-id="lesson-3-introduction">
+    <img class="l3-hero__image" src="/assets/hero/Hero Image 2.JPEG" alt="Two runners moving along a city road in ON footwear" width="2880" height="1620" fetchpriority="high" />
+    <div class="l3-hero__shade"></div>
+    <div class="container l3-hero__copy">
+      <h1>{lesson.title}</h1>
+      <h2>{lesson.introduction.title}</h2>
+      <p>{lesson.introduction.text}</p>
+    </div>
+  </section>
+
+  <section class="l3-purpose container" aria-label="Lesson purpose and learning objective">
+    <div class="l3-purpose__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+    <div><p><strong>Lesson purpose:</strong> {lesson.purpose}</p><p><strong>Learning objective:</strong> {lesson.objective}</p></div>
+  </section>
+
+  <section class="l3-anele" id="lesson-3-anele" aria-labelledby="lesson-3-anele-heading">
+    <div class="container">
+      <div class="l3-anele__story">
+        <div class="l3-anele__copy">
+          <h2 id="lesson-3-anele-heading">{lesson.anele.title}</h2>
+          <p class="l3-anele__profile"><strong>Customer profile:</strong> {lesson.anele.profile}</p>
+          <p>{lesson.anele.text}</p>
+        </div>
+        <img class="l3-anele__image" src="/assets/portraits/image option 2.jpeg" alt="Runner's legs and ON shoes on outdoor steps" width="1440" height="2160" loading="lazy" />
+      </div>
+      <AssessmentQuestion question={lesson.anele.assessment} id="lesson-3-anele-check" number={1} correctIndex={1} />
+    </div>
+  </section>
+
+  <section class="l3-collection" id="lesson-3-collection" aria-labelledby="lesson-3-collection-heading">
+    <div class="container">
+      <h2 id="lesson-3-collection-heading">{lesson.collection.title}</h2>
+      <p>{lesson.collection.intro}</p>
+    </div>
+  </section>
+
+  <ProductExplorer
+    id="lesson-3-products"
+    title={lesson.explorer.title}
+    intro={lesson.explorer.intro}
+    instruction={lesson.collection.instruction}
+    categories={lesson.explorer.categories}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-3:products`}
+  />
+
+  <FeatureFlipCards
+    id="lesson-3-feature-cards"
+    title={lesson.flipCards.title}
+    intro={lesson.flipCards.introduction}
+    instruction={lesson.flipCards.instruction}
+    cards={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-3:feature-cards`}
+  />
+
+  <ProductMatch
+    id="lesson-3-matching"
+    title={lesson.matching.title}
+    instruction={lesson.matching.instruction}
+    pairs={lesson.matching.pairs}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-3:matching`}
+  />
+
+  <section class="l3-knowledge" aria-label="Lesson 3 knowledge check">
+    <div class="container"><AssessmentQuestion question={lesson.knowledge} id="lesson-3-knowledge" number={2} correctIndex={0} /></div>
+  </section>
+
+  <section class="l3-takeaway" id="lesson-3-takeaway" data-completion-id="lesson-3-takeaway">
+    <div class="container"><h2>{lesson.takeaway.title}</h2><p>{lesson.takeaway.text}</p></div>
+  </section>
+</div>

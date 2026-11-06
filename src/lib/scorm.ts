@@ -27,7 +27,7 @@ const findApi = (): ScormApi | null => {
   return null;
 };
 
-export type ScormLaunch = { mode: "standalone" | "lms" | "failed"; status: string; suspendData: string };
+export type ScormLaunch = { mode: "standalone" | "lms" | "failed"; status: string; suspendData: string; location: string; learnerId: string | null };
 
 export class ScormSession {
   private api = findApi();
@@ -69,41 +69,52 @@ export class ScormSession {
     return null;
   }
 
+  private getOptional(element: string): string | null {
+    if (!this.api) return null;
+    try {
+      const value = this.api.LMSGetValue(element);
+      return this.api.LMSGetLastError() === "0" ? value : null;
+    } catch { return null; }
+  }
+
   launch(): ScormLaunch {
-    if (!this.api) return { mode: "standalone", status: "", suspendData: "" };
-    if (!this.call("LMSInitialize", "")) return { mode: "failed", status: "", suspendData: "" };
+    if (!this.api) return { mode: "standalone", status: "", suspendData: "", location: "", learnerId: null };
+    if (!this.call("LMSInitialize", "")) return { mode: "failed", status: "", suspendData: "", location: "", learnerId: null };
     this.active = true;
     const status = this.get("cmi.core.lesson_status");
     const suspendData = this.get("cmi.suspend_data");
-    if (status === null || suspendData === null) return { mode: "failed", status: "", suspendData: "" };
+    const location = this.get("cmi.core.lesson_location");
+    if (status === null || suspendData === null || location === null) return { mode: "failed", status: "", suspendData: "", location: "", learnerId: null };
+    const learnerId = this.getOptional("cmi.core.student_id")?.trim() || null;
     this.ready = true;
     this.status = status;
     if (["", "not attempted", "browsed"].includes(status)) {
       if (this.call("LMSSetValue", "incomplete", "cmi.core.lesson_status") && this.call("LMSCommit", "")) this.status = "incomplete";
     }
-    return { mode: "lms", status: this.status, suspendData };
+    return { mode: "lms", status: this.status, suspendData, location, learnerId };
   }
 
-  save(suspendData: string, allRequiredComplete: boolean): void {
-    if (!this.active || !this.ready || this.finished) return;
-    let suspendSaved = false;
+  save(suspendData: string, location: string, allowCompletion: boolean): boolean {
+    if (!this.active || !this.ready || this.finished) return false;
     if (suspendData.length > 4096) {
       console.error(`[scorm] cmi.suspend_data is ${suspendData.length} characters; SCORM 1.2 permits 4096. Progress was not sent to the LMS.`);
-    } else {
-      suspendSaved = this.call("LMSSetValue", suspendData, "cmi.suspend_data");
+      return false;
     }
-    const needsCompletion = allRequiredComplete && !["completed", "passed"].includes(this.status);
+    const suspendSaved = this.call("LMSSetValue", suspendData, "cmi.suspend_data");
+    if (!suspendSaved) return false;
+    const locationSaved = this.call("LMSSetValue", location, "cmi.core.lesson_location");
+    if (!locationSaved) return false;
+    const needsCompletion = allowCompletion && !["completed", "passed"].includes(this.status);
     const completionWritten = needsCompletion && this.call("LMSSetValue", "completed", "cmi.core.lesson_status");
-    if (suspendSaved || completionWritten) {
-      const committed = this.call("LMSCommit", "");
-      if (committed && completionWritten) this.status = "completed";
-    }
+    const committed = this.call("LMSCommit", "");
+    if (committed && completionWritten) this.status = "completed";
+    return committed && (!needsCompletion || completionWritten);
   }
 
-  exit(suspendData: string, allRequiredComplete: boolean): void {
+  exit(suspendData: string | null, location: string): void {
     if (!this.active || this.finished) return;
     if (this.ready) {
-      this.save(suspendData, allRequiredComplete);
+      if (suspendData !== null) this.save(suspendData, location, false);
       this.call("LMSSetValue", "suspend", "cmi.core.exit");
       this.call("LMSCommit", "");
     }

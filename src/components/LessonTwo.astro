@@ -1,0 +1,79 @@
+---
+import { courseData } from "../data/course";
+import { completionSettings } from "../data/course-completion";
+import AssessmentQuestion from "./AssessmentQuestion.astro";
+import FeatureFlipCards from "./FeatureFlipCards.astro";
+import ProductExplorer from "./ProductExplorer.astro";
+import ProductMatch from "./ProductMatch.astro";
+import "../styles/lesson-two.css";
+
+const lesson = courseData.lesson2;
+---
+
+<div class="lesson-two">
+  <section class="l2-hero" id="lesson-2-introduction" data-completion-id="lesson-2-introduction">
+    <img class="l2-hero__image" src="/assets/hero/Hero Image 2.JPEG" alt="Two runners moving along a city road in ON footwear" width="2880" height="1620" fetchpriority="high" />
+    <div class="l2-hero__shade"></div>
+    <div class="container l2-hero__copy">
+      <h1>{lesson.title}</h1>
+      <h2>{lesson.introduction.title}</h2>
+      <p>{lesson.introduction.text}</p>
+    </div>
+  </section>
+
+  <section class="l2-purpose container" aria-label="Lesson purpose and learning objective">
+    <div class="l2-purpose__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+    <div><p><strong>Lesson purpose:</strong> {lesson.purpose}</p><p><strong>Learning objective:</strong> {lesson.objective}</p></div>
+  </section>
+
+  <section class="l2-sipho" id="lesson-2-sipho" aria-labelledby="lesson-2-sipho-heading">
+    <div class="container">
+      <div class="l2-sipho__story">
+        <div class="l2-sipho__copy">
+          <h2 id="lesson-2-sipho-heading">{lesson.sipho.title}</h2>
+          {lesson.sipho.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+          <p>{lesson.sipho.dialogueIntro}</p>
+        </div>
+        <img class="l2-sipho__portrait" src="/assets/portraits/Image option 1.jpeg" alt="Runner in ON shoes on a city pavement" width="1440" height="2160" loading="lazy" />
+      </div>
+      <blockquote class="l2-sipho__quote"><p>“{lesson.sipho.dialogue}”</p></blockquote>
+      <p class="l2-sipho__instruction">{lesson.sipho.instruction}</p>
+      <AssessmentQuestion question={lesson.sipho.assessment} id="lesson-2-sipho-check" number={1} correctIndex={2} />
+    </div>
+  </section>
+
+  <ProductExplorer
+    id="lesson-2-products"
+    title={lesson.explorer.title}
+    intro={lesson.explorer.intro}
+    instruction={lesson.explorer.instruction}
+    categories={lesson.explorer.categories}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-2:products`}
+  />
+
+  <FeatureFlipCards
+    id="lesson-2-feature-cards"
+    title={lesson.flipCards.title}
+    instruction={lesson.flipCards.instruction}
+    cards={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-2:feature-cards`}
+  />
+
+  <ProductMatch
+    id="lesson-2-matching"
+    title={lesson.matching.title}
+    instruction={lesson.matching.instruction}
+    pairs={lesson.matching.pairs}
+    products={lesson.explorer.products}
+    storageKey={`${completionSettings.storageKey}:lesson-2:matching`}
+  />
+
+  <section class="l2-knowledge" aria-label="Lesson 2 knowledge check">
+    <div class="container"><AssessmentQuestion question={lesson.knowledge} id="lesson-2-knowledge" number={2} correctIndex={2} /></div>
+  </section>
+
+  <section class="l2-takeaway" id="lesson-2-takeaway" data-completion-id="lesson-2-takeaway">
+    <div class="container"><h2>{lesson.takeaway.title}</h2><p>{lesson.takeaway.text}</p></div>
+  </section>
+</div>

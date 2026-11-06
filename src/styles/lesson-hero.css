@@ -1,0 +1,10 @@
+/* Shared introduction-to-panel clearance for Lessons 2–6. */
+:is(.l2-hero__copy, .l3-hero__copy, .l4-hero__copy, .l5-hero__copy, .l6-hero__copy) {
+  padding-bottom: 16.5rem;
+}
+
+@media (max-width: 48rem) {
+  :is(.l2-hero__copy, .l3-hero__copy, .l4-hero__copy, .l5-hero__copy, .l6-hero__copy) {
+    padding-bottom: 11rem;
+  }
+}

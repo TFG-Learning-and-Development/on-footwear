@@ -1,0 +1,175 @@
+---
+import "../styles/product-explorer.css";
+
+type Category = { id: string; label: string; productIds: readonly string[] };
+type Product = {
+  id: string; category: string; name: string; introduction: string; customerProfile: string; profileImage: string; profileAlt?: string;
+  who: string; bestFor: string; why: string; explain: string; technical: string; cue: string;
+  images: readonly string[];
+};
+interface Props {
+  id: string;
+  title: string;
+  intro: string;
+  instruction: string;
+  categories: readonly Category[];
+  products: readonly Product[];
+  storageKey?: string;
+}
+const { id, title, intro, instruction, categories, products, storageKey = id } = Astro.props as Props;
+const productById = new Map(products.map((product) => [product.id, product]));
+const imageUrl = (filename: string) => encodeURI(`/assets/footwear/${filename}`);
+const angleNames = ["Three-quarter view", "Side view", "Top view"];
+---
+
+<section class="product-explorer" id={id} data-completion-id={id} data-required-items={JSON.stringify(products.map((product) => product.id))} data-product-explorer data-explorer-storage-key={storageKey} aria-labelledby={`${id}-heading`}>
+  <div class="container">
+    <div class="product-explorer__intro">
+      <h2 id={`${id}-heading`}>{title}</h2>
+      <p>{intro}</p>
+      <p class="product-explorer__instruction">{instruction}</p>
+      <p class="product-explorer__completion-cue">Explore every shoe in the categories to complete this activity. Alternate image views are optional. <span data-product-explore-count role="status" aria-live="polite">0 of {products.length} shoes explored</span></p>
+    </div>
+    <div class="product-explorer__tabs" role="tablist" aria-label="Product categories">
+      {categories.map((category, index) => (
+        <button id={`${id}-tab-${category.id}`} type="button" role="tab" aria-controls={`${id}-panel-${category.id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1} data-category-id={category.id}>{category.label}</button>
+      ))}
+    </div>
+    {categories.map((category, categoryIndex) => (
+      <div class="product-explorer__category" id={`${id}-panel-${category.id}`} role="tabpanel" aria-labelledby={`${id}-tab-${category.id}`} tabindex="0" data-category-panel={category.id} hidden={categoryIndex !== 0}>
+        <div class="product-explorer__switch" role="group" aria-label={`${category.label} products`}>
+          {category.productIds.map((productId, index) => {
+            const product = productById.get(productId);
+            return product && <button type="button" data-product-choice={productId} aria-pressed={index === 0 ? "true" : "false"} aria-controls={`${id}-product-${productId}`}>{product.name}</button>;
+          })}
+        </div>
+        {category.productIds.map((productId, index) => {
+          const product = productById.get(productId);
+          return product && (
+            <article class="product-explorer__product" id={`${id}-product-${product.id}`} data-product-id={product.id} hidden={index !== 0} aria-labelledby={`${id}-name-${product.id}`}>
+              <div class="product-explorer__image-stage">
+                <img data-product-image src={imageUrl(product.images[0])} alt={`${product.name}, three-quarter view showing the upper, midsole and outsole`} width="1600" height="1600" loading="lazy" />
+                <div class="product-explorer__angles" role="group" aria-label={`${product.name} image views`}>
+                  {product.images.map((filename, angleIndex) => (
+                    <button type="button" data-image-src={imageUrl(filename)} data-image-alt={`${product.name}, ${angleNames[angleIndex].toLowerCase()}`} aria-pressed={angleIndex === 0 ? "true" : "false"}>{angleNames[angleIndex]}</button>
+                  ))}
+                </div>
+              </div>
+              <div class="product-explorer__details">
+                <h3 id={`${id}-name-${product.id}`}>{product.name}</h3>
+                <p class="product-explorer__lead">{product.introduction}</p>
+                <div class="product-explorer__profile">
+                  <img src={product.profileImage} alt={product.profileAlt || "Runner in ON footwear"} width="350" height="500" loading="lazy" />
+                  <p><strong>Customer profile</strong><span>{product.customerProfile}</span></p>
+                </div>
+                <dl>
+                  <div><dt>Who it is for</dt><dd>{product.who}</dd></div>
+                  <div><dt>What it does / best for</dt><dd>{product.bestFor}</dd></div>
+                  <div><dt>Why it works</dt><dd>{product.why}</dd></div>
+                  <div><dt>How to explain it</dt><dd>{product.explain}</dd></div>
+                </dl>
+              </div>
+              <div class="product-explorer__proof">
+                <p><strong>Technical information</strong><span>{product.technical}</span></p>
+                <p><strong>Recommendation cue</strong><span>{product.cue}</span></p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    ))}
+  </div>
+</section>
+
+<script>
+  import { courseStateReady } from "../lib/course-state";
+  courseStateReady.then((courseState) => document.querySelectorAll<HTMLElement>("[data-product-explorer]").forEach((explorer) => {
+    const tabs = [...explorer.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...explorer.querySelectorAll<HTMLElement>("[data-category-panel]")];
+    const exploredCount = explorer.querySelector<HTMLElement>("[data-product-explore-count]");
+    const requiredIds = JSON.parse(explorer.dataset.requiredItems || "[]") as string[];
+    const updateExploredCount = (itemIds: string[]) => {
+      if (!exploredCount) return;
+      const count = requiredIds.filter((id) => itemIds.includes(id)).length;
+      exploredCount.textContent = `${count} of ${requiredIds.length} shoes explored${courseState.completed(explorer.id) ? " · Completed" : ""}`;
+    };
+    updateExploredCount(courseState.explored(explorer.id));
+    window.addEventListener("course-progress:explore-state", ((event: CustomEvent<{ activityId: string; itemIds: string[] }>) => {
+      if (event.detail.activityId === explorer.id) updateExploredCount(event.detail.itemIds);
+    }) as EventListener);
+    const save = (categoryId: string, productId: string) => courseState.set(explorer.id + ":selection", { categoryId, productId });
+    const showProduct = (panel: HTMLElement, productId: string, record = true) => {
+      const products = [...panel.querySelectorAll<HTMLElement>("[data-product-id]")];
+      if (!products.some((product) => product.dataset.productId === productId)) return;
+      panel.querySelectorAll<HTMLButtonElement>("[data-product-choice]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.productChoice === productId)));
+      products.forEach((product) => { product.hidden = product.dataset.productId !== productId; });
+      if (record) save(panel.dataset.categoryPanel || "", productId);
+    };
+    const showCategory = (index: number, focus = false, record = true) => {
+      tabs.forEach((tab, tabIndex) => { tab.setAttribute("aria-selected", String(tabIndex === index)); tab.tabIndex = tabIndex === index ? 0 : -1; });
+      panels.forEach((panel, panelIndex) => { panel.hidden = panelIndex !== index; });
+      if (focus) tabs[index]?.focus();
+      if (record) {
+        const panel = panels[index];
+        const selected = panel?.querySelector<HTMLButtonElement>('[data-product-choice][aria-pressed="true"]') || panel?.querySelector<HTMLButtonElement>("[data-product-choice]");
+        if (panel && selected?.dataset.productChoice) showProduct(panel, selected.dataset.productChoice);
+      }
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => showCategory(index));
+      tab.addEventListener("keydown", (event) => {
+        const next = event.key === "ArrowRight" ? (index + 1) % tabs.length : event.key === "ArrowLeft" ? (index - 1 + tabs.length) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null;
+        if (next === null) return;
+        event.preventDefault(); showCategory(next, true);
+      });
+    });
+    panels.forEach((panel) => {
+      panel.querySelectorAll<HTMLButtonElement>("[data-product-choice]").forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.productChoice) showProduct(panel, button.dataset.productChoice);
+      }));
+      panel.querySelectorAll<HTMLElement>("[data-product-id]").forEach((product) => {
+        const image = product.querySelector<HTMLImageElement>("[data-product-image]");
+        product.querySelectorAll<HTMLButtonElement>("[data-image-src]").forEach((button) => button.addEventListener("click", () => {
+          if (!image || !button.dataset.imageSrc) return;
+          image.src = button.dataset.imageSrc;
+          image.alt = button.dataset.imageAlt || image.alt;
+          product.querySelectorAll<HTMLButtonElement>("[data-image-src]").forEach((choice) => choice.setAttribute("aria-pressed", String(choice === button)));
+        }));
+      });
+    });
+    const saved = courseState.get<{ categoryId?: string; productId?: string } | null>(explorer.id + ":selection", null);
+    const index = panels.findIndex((panel) => panel.dataset.categoryPanel === saved?.categoryId);
+    if (index >= 0) {
+      showCategory(index, false, false);
+      if (saved?.productId) showProduct(panels[index], saved.productId, false);
+    }
+
+    const timers = new Map<HTMLElement, number>();
+    const inView = new Set<HTMLElement>();
+    const isActive = (product: HTMLElement) => !product.hidden && !product.closest<HTMLElement>("[data-category-panel]")?.hidden;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const product = entry.target as HTMLElement;
+        if (entry.isIntersecting && isActive(product) && document.visibilityState === "visible") {
+          inView.add(product);
+          if (!timers.has(product)) timers.set(product, window.setTimeout(() => {
+            timers.delete(product);
+            if (!inView.has(product) || !isActive(product) || document.visibilityState !== "visible") return;
+            const itemId = product.dataset.productId;
+            if (itemId) window.dispatchEvent(new CustomEvent("course-progress:explore", { detail: { activityId: explorer.id, itemId } }));
+          }, 900));
+        } else {
+          inView.delete(product);
+          const timer = timers.get(product);
+          if (timer !== undefined) window.clearTimeout(timer);
+          timers.delete(product);
+        }
+      });
+    }, { rootMargin: "-38% 0px -38% 0px", threshold: 0 });
+    explorer.querySelectorAll<HTMLElement>("[data-product-id]").forEach((product) => observer.observe(product));
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") { timers.forEach((timer) => window.clearTimeout(timer)); timers.clear(); inView.clear(); }
+      else explorer.querySelectorAll<HTMLElement>("[data-product-id]").forEach((product) => { observer.unobserve(product); observer.observe(product); });
+    });
+  }));
+</script>

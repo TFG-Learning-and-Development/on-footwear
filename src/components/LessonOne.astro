@@ -1,0 +1,221 @@
+---
+import { courseData } from "../data/course";
+import AssessmentQuestion from "./AssessmentQuestion.astro";
+import CourseIcon from "./CourseIcon.astro";
+import "../styles/lesson-one.css";
+const lesson = courseData.lesson1;
+const icons = ["activity", "mountain", "gauge", "footprints", "award"] as const;
+const answerOrder = [2, 3, 0, 1];
+const profileIds = lesson.profiles.cards.map((_, index) => "profile-" + (index + 1));
+const technologyIds = lesson.technology.entries.map((_, index) => "technology-" + (index + 1));
+const hotspotIds = lesson.measure.hotspots.map((_, index) => "hotspot-" + (index + 1));
+---
+
+<div class="lesson-one">
+  <section class="l1-hero" id="lesson-1-introduction" data-completion-id="lesson-1-introduction">
+    <img src="/assets/hero/Hero Image 3.avif" alt="Runner moving along a city street in ON footwear" width="2880" height="1620" fetchpriority="high" />
+    <div class="l1-hero__shade"></div>
+    <div class="container l1-hero__copy">
+      <h1>{lesson.title}</h1>
+      <h2>{lesson.introduction.title}</h2>
+      {lesson.introduction.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </section>
+
+  <section class="l1-purpose container" aria-label="Lesson purpose and learning objective">
+    <div class="l1-purpose__symbol"><img src="/assets/logos/ON Logo White.png" alt="ON logo" width="1091" height="2177" loading="lazy" /></div>
+    <div><p><strong>Lesson purpose:</strong> {lesson.purpose}</p><p><strong>Learning objective:</strong> {lesson.objective}</p></div>
+  </section>
+
+  <div class="l1-transition">
+    <section class="l1-profiles" id="lesson-1-profiles" data-completion-id="lesson-1-profiles" data-required-items={JSON.stringify(profileIds)}>
+      <div class="container">
+        <h2>Customer profiles</h2>
+        <div class="l1-section-copy">{lesson.profiles.paragraphs.map((paragraph) => <p>{paragraph}</p>)}</div>
+        <p class="l1-instruction">{lesson.profiles.instruction}</p>
+        <div class="l1-profile-grid">{lesson.profiles.cards.map((card, index) => (
+          <button class="l1-profile" type="button" data-profile-id={"profile-" + (index + 1)} aria-expanded="false" aria-label={"Explore " + card.name}>
+            <span class="l1-profile__inner">
+              <span class="l1-profile__face l1-profile__front"><strong>{card.name}</strong><span class="l1-profile__action">Select to reveal <span aria-hidden="true">↗</span></span></span>
+              <span class="l1-profile__face l1-profile__back" aria-hidden="true"><span class="l1-profile__number">{card.name}</span><strong>{card.need}</strong><span class="l1-profile__action">Select to turn back <span aria-hidden="true">↶</span></span></span>
+            </span>
+          </button>
+        ))}</div>
+      </div>
+    </section>
+    <section class="l1-assessment-band"><div class="container"><AssessmentQuestion question={lesson.checkClue} id="lesson-1-check-clue" number={1} correctIndex={1} /></div></section>
+  </div>
+
+  <section class="l1-technology" id="lesson-1-technology" data-completion-id="lesson-1-technology" data-required-items={JSON.stringify(technologyIds)}>
+    <div class="container">
+      <h2>{lesson.technology.title}</h2>
+      <div class="l1-section-copy">{lesson.technology.paragraphs.map((paragraph) => <p>{paragraph}</p>)}</div>
+      <ul class="l1-principles">{lesson.technology.principles.map((principle) => <li>{principle}</li>)}</ul>
+      <p class="l1-section-copy">{lesson.technology.conclusion}</p>
+      <p class="l1-instruction">{lesson.technology.instruction}</p>
+      <div class="l1-tabs" data-technology-tabs>
+        <div class="l1-tabs__list" role="tablist" aria-label="ON footwear technologies">{lesson.technology.entries.map((entry, index) => (
+          <button id={"l1-tab-" + index} type="button" role="tab" aria-controls={"l1-panel-" + index} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1} data-technology-id={"technology-" + (index + 1)}>{entry.name}</button>
+        ))}</div>
+        {lesson.technology.entries.map((entry, index) => (
+          <div class="l1-tabs__panel" id={"l1-panel-" + index} role="tabpanel" aria-labelledby={"l1-tab-" + index} tabindex="0" hidden={index !== 0}>
+            <div class="l1-tabs__panel-head"><h3>{entry.name}</h3></div>
+            <div class="l1-tabs__explanation"><div><h4>{entry.whatLabel}</h4><p>{entry.what}</p></div><div><h4>{entry.doesLabel}</h4>{entry.does.map((paragraph) => <p>{paragraph}</p>)}</div></div>
+            <div class="l1-tabs__simply"><h4>Say it simply.</h4><p>{entry.simply}</p></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="l1-challenge"><div class="container"><AssessmentQuestion question={lesson.challenge} id="lesson-1-challenge" number={2} correctIndex={1} /></div></section>
+  <section class="l1-technology-takeaway" id="lesson-1-technology-takeaway" data-completion-id="lesson-1-technology-takeaway"><div class="container"><h2>Key Takeaway</h2>{lesson.challenge.takeaway.map((paragraph) => <p>{paragraph}</p>)}</div></section>
+
+  <section class="l1-measure" id="lesson-1-measure" data-completion-id="lesson-1-measure" data-required-items={JSON.stringify(hotspotIds)}>
+    <div class="container">
+      <h2>{lesson.measure.title}</h2><p class="l1-section-copy">{lesson.measure.intro}</p>
+      <div class="l1-measure__layout">
+        <div class="l1-shoe"><img src="/assets/footwear/Cloudflow 5-side.jpg" alt="Side view of the grey ON Cloudflow 5, showing the heel and forefoot cushioning" width="1600" height="1600" loading="lazy" />
+          {lesson.measure.hotspots.slice(0, 3).map((hotspot, index) => <button class={"l1-hotspot l1-hotspot--" + (index + 1)} type="button" data-hotspot-id={"hotspot-" + (index + 1)} aria-label={"Show " + hotspot.name} aria-pressed="false">{index + 1}</button>)}
+        </div>
+        <div class="l1-measure__detail"><div class="l1-measure__selector"><strong>Cloudflow 5</strong><button type="button" data-hotspot-id="hotspot-4" aria-pressed="false" aria-describedby="l1-weight-cue">Weight <CourseIcon name="arrow-right" /></button></div><p class="l1-measure__cue" id="l1-weight-cue">Select Weight to reveal how shoe weight informs a recommendation. Select all four markers to complete this activity.</p><p data-hotspot-detail role="status" aria-live="polite">Select a hotspot to explore the measurement.</p><p class="l1-measure__completion" data-measure-completion role="status" hidden>✓ Measurements complete</p><p class="l1-measure__equation">36 mm − 28 mm = 8 mm</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="l1-discovery" id="lesson-1-discovery" data-completion-id="lesson-1-discovery"><div class="container"><h2>{lesson.discovery.title}</h2><p class="l1-section-copy">{lesson.discovery.intro}</p><ol class="l1-discovery__steps">{lesson.discovery.steps.map((step, index) => (
+    <li><span class="l1-discovery__icon"><CourseIcon name={icons[index]} /></span><h3><span class="l1-discovery__number" aria-hidden="true">{index + 1}.</span>{step.name}</h3><p>{step.question}</p></li>
+  ))}</ol></div></section>
+
+  <section class="l1-matching" id="lesson-1-matching" data-completion-id="lesson-1-matching"><div class="container"><h2>{lesson.matching.title}</h2><p>{lesson.matching.instruction}</p>
+    <form data-match-form><div class="l1-match-grid">{lesson.matching.pairs.map((pair, index) => (
+      <div class="l1-match-row"><label for={"l1-match-" + index}><span>0{index + 1}</span>{pair.statement}</label><select id={"l1-match-" + index} required><option value="">Choose a discovery area</option>{answerOrder.map((choiceIndex) => <option value={choiceIndex}>{lesson.matching.pairs[choiceIndex].answer}</option>)}</select><p data-match-result aria-live="polite"></p></div>
+    ))}</div><button class="l1-action-button" type="submit">Review matches</button><p class="l1-match-summary" data-match-summary role="status" aria-live="polite"></p></form>
+    <form class="l1-reflection" id="lesson-1-reflection" data-completion-id="lesson-1-reflection" data-l1-reflection><label for="l1-reflection-input">{lesson.matching.reflection}</label><textarea id="l1-reflection-input" rows="4"></textarea><button class="l1-action-button" type="submit">Save response</button><p data-reflection-status role="status" aria-live="polite"></p></form>
+  </div></section>
+
+  <section class="l1-takeaway" id="lesson-1-takeaway" data-completion-id="lesson-1-takeaway"><div class="container"><h2>{lesson.takeaway.title}</h2><p>{lesson.takeaway.text}</p></div></section>
+</div>
+
+<script>
+  import { courseData } from "../data/course";
+  import { completionSettings } from "../data/course-completion";
+  import { courseStateReady } from "../lib/course-state";
+  import { reflectionStorageKey, restoreReflection, saveReflection } from "../lib/reflection-storage";
+  const lesson = courseData.lesson1;
+  courseStateReady.then((courseState) => {
+  const explore = (activityId: string, itemId: string) => window.dispatchEvent(new CustomEvent("course-progress:explore", { detail: { activityId, itemId } }));
+  const complete = (activityId: string) => window.dispatchEvent(new CustomEvent("course-progress:complete", { detail: { activityId } }));
+
+  document.querySelectorAll<HTMLButtonElement>("[data-profile-id]").forEach((button) => button.addEventListener("click", () => {
+    const open = button.getAttribute("aria-expanded") !== "true";
+    const name = button.querySelector(".l1-profile__back .l1-profile__number")?.textContent || "profile";
+    button.setAttribute("aria-expanded", String(open));
+    button.setAttribute("aria-label", (open ? "Turn back " : "Explore ") + name);
+    button.querySelector(".l1-profile__front")?.setAttribute("aria-hidden", String(open));
+    button.querySelector(".l1-profile__back")?.setAttribute("aria-hidden", String(!open));
+    if (open && button.dataset.profileId) explore("lesson-1-profiles", button.dataset.profileId);
+  }));
+  document.querySelectorAll<HTMLButtonElement>("[data-profile-id]").forEach((button) => {
+    if (!courseState.explored("lesson-1-profiles").includes(button.dataset.profileId || "")) return;
+    const name = button.querySelector(".l1-profile__back .l1-profile__number")?.textContent || "profile";
+    button.setAttribute("aria-expanded", "true");
+    button.setAttribute("aria-label", "Turn back " + name);
+    button.querySelector(".l1-profile__front")?.setAttribute("aria-hidden", "true");
+    button.querySelector(".l1-profile__back")?.setAttribute("aria-hidden", "false");
+  });
+
+  const tabs = document.querySelector<HTMLElement>("[data-technology-tabs]");
+  if (tabs) {
+    const buttons = [...tabs.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...tabs.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+    const select = (index: number, focus = false, record = true) => {
+      buttons.forEach((button, i) => { button.setAttribute("aria-selected", String(i === index)); button.tabIndex = i === index ? 0 : -1; });
+      panels.forEach((panel, i) => { panel.hidden = i !== index; });
+      if (focus) buttons[index]?.focus();
+      const itemId = buttons[index]?.dataset.technologyId;
+      if (record && itemId) explore("lesson-1-technology", itemId);
+      if (record) courseState.set("lesson-1-technology-active", index);
+    };
+    buttons.forEach((button, index) => {
+      button.addEventListener("click", () => select(index));
+      button.addEventListener("keydown", (event) => {
+        const next = event.key === "ArrowRight" ? (index + 1) % buttons.length : event.key === "ArrowLeft" ? (index - 1 + buttons.length) % buttons.length : event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : null;
+        if (next === null) return;
+        event.preventDefault(); select(next, true);
+      });
+    });
+    const stored = courseState.get<number>("lesson-1-technology-active", 0);
+    if (Number.isInteger(stored) && stored >= 0 && stored < buttons.length) select(stored, false, false);
+  }
+
+  const hotspots = [...document.querySelectorAll<HTMLButtonElement>("[data-hotspot-id]")];
+  const detail = document.querySelector<HTMLElement>("[data-hotspot-detail]");
+  const measureCompletion = document.querySelector<HTMLElement>("[data-measure-completion]");
+  const syncMeasure = (itemIds: string[], isComplete: boolean) => {
+    hotspots.forEach((button) => { button.dataset.reviewed = String(itemIds.includes(button.dataset.hotspotId || "")); });
+    if (measureCompletion) measureCompletion.hidden = !isComplete;
+  };
+  syncMeasure(courseState.explored("lesson-1-measure"), courseState.completed("lesson-1-measure"));
+  window.addEventListener("course-progress:explore-state", ((event: CustomEvent<{ activityId: string; itemIds: string[] }>) => {
+    if (event.detail.activityId === "lesson-1-measure") syncMeasure(event.detail.itemIds, courseState.completed("lesson-1-measure"));
+  }) as EventListener);
+  window.addEventListener("course-progress:state", ((event: CustomEvent<{ completedIds: string[] }>) => {
+    if (measureCompletion) measureCompletion.hidden = !event.detail.completedIds.includes("lesson-1-measure");
+  }) as EventListener);
+  hotspots.forEach((button, index) => button.addEventListener("click", () => {
+    hotspots.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+    if (detail) detail.textContent = lesson.measure.hotspots[index].text;
+    courseState.set("lesson-1-hotspot-active", index);
+    if (button.dataset.hotspotId) explore("lesson-1-measure", button.dataset.hotspotId);
+  }));
+  const restoredHotspot = courseState.get<number | null>("lesson-1-hotspot-active", null);
+  if (restoredHotspot !== null && Number.isInteger(restoredHotspot) && restoredHotspot >= 0 && restoredHotspot < hotspots.length) {
+    hotspots.forEach((button, index) => button.setAttribute("aria-pressed", String(index === restoredHotspot)));
+    if (detail) detail.textContent = lesson.measure.hotspots[restoredHotspot].text;
+  }
+
+  const matchForm = document.querySelector<HTMLFormElement>("[data-match-form]");
+  if (matchForm) {
+    const selects = [...matchForm.querySelectorAll<HTMLSelectElement>("select")];
+    const results = [...matchForm.querySelectorAll<HTMLElement>("[data-match-result]")];
+    const summary = matchForm.querySelector<HTMLElement>("[data-match-summary]");
+    const saved = courseState.get<(number | null)[]>("lesson-1-matching-selections", []);
+    if (Array.isArray(saved)) selects.forEach((select, index) => { if (Number.isInteger(saved[index]) && saved[index] !== null && saved[index]! >= 0 && saved[index]! < selects.length) select.value = String(saved[index]); });
+    selects.forEach((select) => select.addEventListener("change", () => {
+      results.forEach((result) => { result.textContent = ""; delete result.dataset.result; });
+      if (summary) summary.textContent = "";
+      courseState.set("lesson-1-matching-selections", selects.map((item) => item.value === "" ? null : Number(item.value)));
+    }));
+    matchForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!matchForm.reportValidity()) return;
+      let correct = 0;
+      selects.forEach((select, index) => {
+        const isCorrect = Number(select.value) === index;
+        if (isCorrect) correct++;
+        results[index].textContent = isCorrect ? "Correct" : "Review: " + lesson.matching.pairs[index].answer;
+        results[index].dataset.result = isCorrect ? "correct" : "incorrect";
+      });
+      if (summary) summary.textContent = correct + " of " + selects.length + " matched correctly.";
+      complete("lesson-1-matching");
+    });
+  }
+
+  const reflection = document.querySelector<HTMLFormElement>("[data-l1-reflection]");
+  if (reflection) {
+    const input = reflection.querySelector<HTMLTextAreaElement>("textarea");
+    const status = reflection.querySelector<HTMLElement>("[data-reflection-status]");
+    const key = reflectionStorageKey(completionSettings.storageKey, "lesson-1-reflection", courseState);
+    if (input) input.value = restoreReflection(key);
+    input?.addEventListener("input", () => { saveReflection(key, input.value); if (status) status.textContent = ""; });
+    reflection.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!input?.value.trim()) { input?.focus(); return; }
+      const saved = saveReflection(key, input.value);
+      if (status) status.textContent = saved ? "Response saved on this device." : "Response submitted.";
+      complete("lesson-1-reflection");
+    });
+  }
+  });
+</script>
